@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대전의 설계자 — WW1 대체역사 전략 프로토타입 v5</title>
+<style>
+  :root{
+    --bg:#17160f; --panel:#241f16; --panel2:#2c2618; --panel3:#332c1c;
+    --accent:#c19a4b; --accent2:#8fae74; --text:#ecdfc0; --muted:#a89877;
+    --danger:#c0564a; --good:#6fa06f; --border:#4a3f28; --cp:#8a4a42; --en:#3f6b8a; --sea:#2a4a5c;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;font-family:'Noto Sans KR','Georgia',serif;background:radial-gradient(ellipse at top,#221d13,#100e09);color:var(--text);min-height:100vh;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  button{font-family:inherit;cursor:pointer;}
+  select{font-family:inherit;}
+  .hidden{display:none !important;}
+
+  #setup-screen{max-width:900px;margin:0 auto;padding:40px 24px;text-align:center;}
+  #setup-screen h1{font-size:2.1em;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-shadow:0 2px 8px #000;}
+  #setup-screen .sub{color:var(--muted);margin-bottom:24px;font-size:0.92em;}
+  .intro-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:left;margin-bottom:24px;line-height:1.7;font-size:0.88em;color:var(--muted);}
+  .intro-box b{color:var(--accent2);}
+  .nation-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+  .nation-card{background:var(--panel2);border:2px solid var(--border);border-radius:10px;padding:16px;text-align:left;transition:.15s;}
+  .nation-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .nation-card h3{margin:0 0 6px;color:var(--text);font-size:1.02em;}
+  .nation-card .bloc-tag{display:inline-block;font-size:0.7em;padding:2px 8px;border-radius:10px;margin-bottom:8px;}
+  .bloc-CP{background:var(--cp);color:#fff;} .bloc-EN{background:var(--en);color:#fff;} .bloc-none{background:#555;color:#fff;}
+  .nation-card p{font-size:0.78em;color:var(--muted);margin:0 0 12px;min-height:48px;line-height:1.5;}
+  .nation-card button{width:100%;background:var(--accent);border:none;color:#211a0d;font-weight:bold;padding:8px;border-radius:6px;}
+  .nation-card button:hover{background:#dcb15e;}
+
+  #game-screen{display:flex;flex-direction:column;height:100vh;}
+  #topbar{display:flex;align-items:center;gap:14px;padding:9px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  #topbar .brand{font-weight:bold;color:var(--accent);font-size:1.02em;}
+  #topbar .stat{font-size:0.8em;color:var(--muted);}
+  #topbar .stat b{color:var(--text);}
+  #topbar .spacer{flex:1;}
+  #endTurnBtn{background:var(--accent2);border:none;color:#132213;font-weight:bold;padding:8px 18px;border-radius:6px;font-size:0.92em;}
+  #endTurnBtn:hover{background:#a4cc86;}
+
+  #tabs{display:flex;gap:2px;background:var(--panel);padding:0 16px;border-bottom:1px solid var(--border);overflow-x:auto;}
+  .tab-btn{background:transparent;border:none;color:var(--muted);padding:9px 14px;font-size:0.86em;border-bottom:3px solid transparent;white-space:nowrap;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-btn:hover{color:var(--text);}
+
+  #content{flex:1;overflow:auto;padding:16px;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:15px;margin-bottom:12px;}
+  .panel h2{margin:0 0 12px;font-size:1.02em;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  .rel-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .rel-row:last-child{border-bottom:none;}
+  .rel-name{width:150px;font-size:0.86em;flex-shrink:0;}
+  .rel-bar-wrap{flex:1;height:8px;background:#000;border-radius:4px;overflow:hidden;position:relative;min-width:80px;}
+  .rel-bar{height:100%;position:absolute;top:0;}
+  .rel-val{width:38px;font-size:0.76em;text-align:right;color:var(--muted);}
+  .tag{font-size:0.66em;padding:2px 6px;border-radius:8px;margin-left:4px;}
+  .tag-war{background:var(--danger);color:#fff;} .tag-pact{background:#3a5a3a;color:#cde;}
+  .rel-actions{display:flex;gap:4px;flex-wrap:wrap;}
+  .mini-btn{background:var(--panel3);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:5px;font-size:0.72em;}
+  .mini-btn:hover{background:var(--accent);color:#211a0d;}
+  .mini-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .card-list{display:flex;flex-direction:column;gap:8px;}
+  .gen-card{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:0.83em;gap:8px;flex-wrap:wrap;}
+  .gen-card.used{opacity:0.4;} .gen-card.locked{opacity:0.55;border-style:dashed;}
+  .gen-stats span{margin-right:8px;color:var(--muted);}
+  .gen-trait{font-size:0.74em;color:var(--accent2);display:block;margin-top:2px;}
+  .gen-lock{font-size:0.74em;color:var(--muted);display:block;margin-top:2px;}
+
+  .division-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;}
+  .division-card h4{margin:0 0 6px;color:var(--text);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+  .strength-bar-wrap{height:6px;background:#000;border-radius:3px;overflow:hidden;margin:4px 0 8px;}
+  .strength-bar{height:100%;background:var(--good);}
+  .battalion-chip{display:inline-block;background:var(--panel3);border:1px solid var(--border);border-radius:12px;padding:3px 9px;font-size:0.72em;margin:2px 3px 2px 0;}
+  .battalion-chip button{background:none;border:none;color:var(--danger);margin-left:4px;font-size:0.9em;}
+  .battalion-chip.chip-core{border-color:var(--accent);background:#3a3120;}
+  .grade-badge{display:inline-block;font-size:0.68em;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle;}
+  .grade-S{background:#c9a227;color:#241d05;}
+  .grade-A{background:#7a9bc4;color:#0c1620;}
+  .grade-B{background:#5c5648;color:#e8e2d0;}
+  .grade-C{background:#4a453a;color:#b8b1a0;}
+  .grade-D{background:#3a2e2a;color:#8a7a6a;}
+  .city-hp-wrap{fill:#1a1710;stroke:#000;stroke-width:0.5;}
+  .city-hp-fill{transition:width .2s;}
+  .corps-card{background:var(--panel3);border:1px solid var(--accent2);border-radius:8px;padding:8px;margin:6px 0;}
+  .node-select{font-size:0.78em;padding:3px;}
+  .palette{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .palette button{background:var(--panel3);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:6px;font-size:0.74em;}
+  .palette button:hover{background:var(--accent);color:#211a0d;}
+  .palette button:disabled{opacity:0.3;cursor:not-allowed;}
+
+  .front-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;}
+  .front-card h4{margin:0 0 8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+  .front-gauge-wrap{height:12px;background:#111;border-radius:6px;overflow:hidden;position:relative;margin-bottom:6px;}
+  .front-gauge-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#666;}
+  .front-gauge-fill{height:100%;position:absolute;top:0;}
+  .front-labels{display:flex;justify-content:space-between;font-size:0.7em;color:var(--muted);}
+  .deploy-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .deploy-row select,.deploy-row button{background:var(--panel3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-size:0.76em;}
+  .badge{display:inline-block;padding:1px 7px;border-radius:8px;font-size:0.68em;margin-left:6px;}
+
+  #logList{display:flex;flex-direction:column-reverse;gap:6px;max-height:65vh;overflow:auto;}
+  .log-entry{padding:8px 10px;border-left:3px solid var(--border);background:var(--panel2);font-size:0.83em;border-radius:0 6px 6px 0;}
+  .log-entry.war{border-left-color:var(--danger);} .log-entry.divergence{border-left-color:var(--accent);background:#3a2f14;}
+  .log-entry.battle{border-left-color:var(--en);} .log-entry.peace{border-left-color:var(--good);}
+  .log-turn{color:var(--muted);font-size:0.73em;margin-right:6px;}
+
+  .history-compare{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:0.83em;}
+  .history-compare .ot{color:var(--muted);} .history-compare .now{color:var(--accent2);font-weight:bold;}
+
+  .resource-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+  .resource-box{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.83em;}
+  .resource-box b{display:block;font-size:1.1em;color:var(--accent2);}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel3);border:1px solid var(--accent);color:var(--text);padding:10px 18px;border-radius:8px;font-size:0.83em;z-index:99;box-shadow:0 4px 14px rgba(0,0,0,.5);}
+
+  /* mail */
+  .mail-tabs{display:flex;gap:6px;margin-bottom:10px;}
+  .mail-tabs button{background:var(--panel3);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:0.82em;}
+  .mail-tabs button.active{color:var(--accent);border-color:var(--accent);}
+  .letter{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;font-size:0.85em;}
+  .letter.reject{border-left-color:var(--danger);}
+  .letter .meta{font-size:0.74em;color:var(--muted);margin-bottom:4px;}
+  .letter .subject{font-weight:bold;color:var(--text);margin-bottom:4px;}
+  .composer{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;}
+  .composer select,.composer button{background:var(--panel3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:5px;font-size:0.82em;margin-right:6px;margin-bottom:6px;}
+  .composer button.send{background:var(--accent2);color:#132213;font-weight:bold;}
+
+  /* map */
+  #mapSvgWrap{background:#0e0d08;border:1px solid var(--border);border-radius:8px;overflow:auto;}
+  .prov-label{font-size:6.5px;fill:var(--muted);}
+  .legend{display:flex;gap:14px;font-size:0.78em;color:var(--muted);margin-top:8px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+  /* industry / navy */
+  .ind-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .ind-card h4{margin:0 0 4px;} .ind-card p{font-size:0.78em;color:var(--muted);margin:0 0 10px;}
+  .level-dots{margin-bottom:10px;} .level-dots span{display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--panel3);border:1px solid var(--border);margin-right:3px;}
+  .level-dots span.filled{background:var(--accent2);}
+  .ship-card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:0.82em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .ship-card select{background:var(--panel3);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.78em;}
+
+  /* research */
+  .ability-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;}
+  .ability-card.done{border-color:var(--good);opacity:0.75;}
+  .ability-card.locked{opacity:0.5;}
+  .ability-card h4{margin:0 0 4px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+  .ability-card p{font-size:0.78em;color:var(--muted);margin:0 0 8px;}
+  .cost-tag{font-size:0.72em;color:var(--accent2);margin-right:6px;}
+  .res-badge{display:inline-block;padding:1px 8px;border-radius:8px;font-size:0.68em;background:var(--panel3);border:1px solid var(--border);margin-right:4px;}
+
+  /* map province pins (city-marker style, not hex tiles) */
+  #mapControls{display:flex;gap:6px;margin-bottom:8px;}
+  #mapControls button{background:var(--panel3);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:5px;font-size:0.8em;}
+  .prov-pin{cursor:pointer;stroke:#0e0d08;stroke-width:1.5;transition:opacity .1s;}
+  .prov-pin:hover{opacity:0.8;stroke:var(--accent);stroke-width:2;}
+  .prov-pin-halo{stroke:#dfe8ee;stroke-width:1;opacity:0.5;pointer-events:none;}
+  .terrain-blob{opacity:0.28;}
+  .land-mass{fill:#3a3324;}
+  .sea-patch{fill:var(--sea);opacity:0.55;}
+  .nation-blob{opacity:0.22;stroke:none;}
+  .nation-blob.mine{opacity:0.34;}
+  .geo-label{font-size:11px;fill:var(--muted);letter-spacing:1px;pointer-events:none;}
+  .geo-label.big{font-size:13px;fill:var(--text);opacity:0.8;font-weight:bold;}
+  .mountain-tri{fill:#5a5348;opacity:0.8;}
+  .river-path{stroke:#4a7ea3;stroke-width:1.6;fill:none;opacity:0.55;}
+  .frontline-path{stroke:var(--accent);stroke-width:1.2;stroke-dasharray:4 3;fill:none;opacity:0.7;}
+  .front-contrib{background:#20200f;border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:0.78em;color:var(--muted);}
+  .front-contrib b{color:var(--accent2);}
+  .front-contrib .bar-wrap{background:var(--panel3);border-radius:4px;height:8px;margin-top:4px;overflow:hidden;display:flex;}
+  .offensive-btn{background:var(--danger)!important;color:#fff!important;}
+  .offensive-btn:disabled{background:var(--panel3)!important;color:var(--muted)!important;opacity:0.6;}
+
+  /* reserve divisions */
+  .reserve-card{background:#241f16;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:0.82em;color:var(--muted);}
+  .reserve-card b{color:var(--text);}
+
+  /* battle replay */
+  .battle-replay-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:0.8em;color:var(--muted);line-height:1.6;}
+  .battle-replay-card b{color:var(--text);}
+  .battle-replay-card.decisive{border-color:var(--accent);background:#2c260f;}
+
+  /* squadrons */
+  .squadron-hdr{font-size:0.76em;color:var(--accent2);margin:8px 0 4px;padding-top:6px;border-top:1px dashed var(--border);}
+  .squadron-hdr:first-child{border-top:none;padding-top:0;}
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <h1>⚔ 대전의 설계자</h1>
+  <div class="sub">A WW1 Alternate-History Strategy Prototype v5 — 1905년, 다가올 대전(大戰)의 그림자</div>
+  <div class="intro-box">
+    <b>이번 버전은:</b> 1905년 평시부터 시작합니다. 외교 서신을 주고받으며 관계를 관리하고, 산업과 연구를 육성하고,
+    지휘관을 확보해두세요. 역사는 실제와 비슷하게 흘러가려 하지만 — 모로코 위기, 보스니아 병합, 발칸전쟁, 그리고
+    1914년의 사라예보 사건까지 — 당신의 선택이 그 흐름을 완전히 바꿀 수 있습니다.<br><br>
+    <b>v5에서 추가된 것:</b> 전선의 각 도시가 고유한 체력을 가진 노드형 전투지도로 개편 — 여러 군단이 같은 전선에서
+    동시에 서로 다른 도시를 노려 협공·우회 공격을 할 수 있고, 도시 체력을 다 깎으면 함락되며 고립된 적 거점은
+    탄넨베르크식으로 함께 무너집니다. 사단 편제는 주력 대대 3개 + 보조 대대 7개(주력은 병력을 더 먹는 대신 훨씬
+    강력)로 재설계. 장군은 S~D 5등급으로 재평가되어 실질적인 능력치 격차가 생겼고, 대대마다 고유 특성(우회 공격
+    보너스·공성 특화·고정 방어 등)이 붙습니다. 외교에서는 1915년 참전 예정국과도 개전 전부터 서신을 주고받을 수
+    있고, 전시 동맹에게 산업력·기술을 직접 지원할 수 있습니다. 모든 참전국에 국내 불안도(전쟁 피로) 수치가 생겨
+    한계를 넘으면 반정부 봉기로 국력이 급감합니다. 연구·병종도 이번에 더 늘렸고(요새화·첩보 기술, 제병협동 교리,
+    화염방사병 등) 앞으로 업데이트마다 계속 확장할 예정입니다.<br><br>
+    <span style="color:var(--muted);font-size:0.92em;">※ 극동아시아·북미 지도, 중동 소국(이란·사우디), 브라질·멕시코 등
+    비유럽권 참전, 그리고 137명 전원의 완전히 개별적인 고유 능력(현재는 공유 특성 + 등급제)은 여전히 이번 업데이트
+    범위 밖입니다 — 별도 업데이트로 요청해 주세요.</span>
+  </div>
+  <div class="composer" style="max-width:520px;margin:0 auto 18px;">
+    <label style="font-size:0.85em;color:var(--muted);margin-right:8px;">난이도:</label>
+    <select id="difficultySelect">
+      <option value="easy">쉬움 — 다른 열강의 성장이 느립니다</option>
+      <option value="normal" selected>보통</option>
+      <option value="hard">어려움 — 다른 열강이 연구·군비를 빠르게 늘립니다</option>
+    </select>
+  </div>
+  <div class="nation-grid" id="nationGrid"></div>
+</div>
+
+<div id="game-screen" class="hidden">
+  <div id="topbar">
+    <div class="brand" id="tbNation">-</div>
+    <div class="stat">📅 <b id="tbDate">-</b></div>
+    <div class="stat">🪖 병력 <b id="tbManpower">-</b></div>
+    <div class="stat">🏭 산업력 <b id="tbIndustry">-</b></div>
+    <div class="stat">📚 지식 <b id="tbKnowledge">-</b></div>
+    <div class="stat">⚙ 강철 <b id="tbSteel">-</b></div>
+    <div class="stat">🛢 원유 <b id="tbOil">-</b></div>
+    <div class="stat">🕊 외교력 <b id="tbAP">-</b></div>
+    <div class="spacer"></div>
+    <button id="skip5Btn">5턴 건너뛰기 ▶▶</button>
+    <button id="endTurnBtn">턴 종료 ▶</button>
+  </div>
+  <div id="tabs">
+    <button class="tab-btn" data-tab="overview">개요</button>
+    <button class="tab-btn" data-tab="mail">외교 서신</button>
+    <button class="tab-btn" data-tab="military">군사 편제</button>
+    <button class="tab-btn" data-tab="map">전선 지도</button>
+    <button class="tab-btn" data-tab="research">연구</button>
+    <button class="tab-btn" data-tab="navy">해군</button>
+    <button class="tab-btn" data-tab="log">기록 · 역사 비교</button>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script>
+/* ======================= UTIL ======================= */
+function turnFor(y,m){ return (y-1905)*12 + m; }
+function turnToDate(t){ const idx=t-1; const year=1905+Math.floor(idx/12); const month=(idx%12)+1; return {year,month}; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* ======================= NATIONS ======================= */
+const NATIONS = {
+  GER:{name:'독일 제국', bloc:'CP', major:true, playable:true, baseline:120, desc:'유럽 대륙 최강의 육군을 보유한 산업 강국. 삼국동맹의 중심.'},
+  AH: {name:'오스트리아-헝가리', bloc:'CP', major:true, playable:true, baseline:90, desc:'다민족 제국. 발칸 반도의 긴장이 언젠가 위기를 부를 수 있다.'},
+  OTT:{name:'오스만 제국', bloc:null, major:false, playable:true, baseline:60, desc:'아직 진영을 정하지 않은 쇠퇴하는 제국. 외교로 어느 쪽이든 끌어들일 수 있다.'},
+  FRA:{name:'프랑스', bloc:'EN', major:true, playable:true, baseline:100, desc:'독일과 국경을 맞댄 협상국의 핵심. 1905년 현재 영국과 막 화친(Entente Cordiale)을 맺었다.'},
+  UK: {name:'영국', bloc:'EN', major:true, playable:true, baseline:110, desc:'세계 최대의 해군 강국. 대륙 문제에 거리를 두어왔지만 독일 해군 증강을 경계한다.'},
+  RUS:{name:'러시아 제국', bloc:'EN', major:true, playable:true, baseline:100, desc:'광대한 인적 자원을 지녔지만 산업화가 더딘 거인. 프랑스와 동맹 중이다.'},
+  ITA:{name:'이탈리아 왕국', bloc:'CP', major:false, playable:true, baseline:75, desc:'명목상 삼국동맹 회원국이지만 오스트리아와는 영토 문제로 앙금이 있다. 실제 역사에서는 1915년 협상국으로 참전을 뒤집었다.'},
+  SER:{name:'세르비아 왕국', bloc:'EN', major:false, playable:true, baseline:35, desc:'범슬라브주의의 최전선에 선 작은 나라. 오스트리아-헝가리와 국경 갈등이 잦다.'},
+  // --- 1915년부터 외교 무대에 등장하는 약소국들 (전용 전선은 없지만, 진영 선택·서신 교환·동맹 의무 사슬에는 참여한다) ---
+  BUL:{name:'불가리아 왕국', bloc:null, major:false, playable:false, baseline:30, desc:'제2차 발칸전쟁의 패배를 설욕하려는 나라. 1915년부터 진영을 저울질한다.'},
+  ROM:{name:'루마니아 왕국', bloc:null, major:false, playable:false, baseline:35, desc:'트란실바니아 회복을 노리는 나라. 1915년부터 진영을 저울질한다.'},
+  GRE:{name:'그리스 왕국', bloc:null, major:false, playable:false, baseline:25, desc:'국왕과 정부의 노선이 엇갈리는 나라. 1915년부터 진영을 저울질한다.'},
+  POR:{name:'포르투갈 공화국', bloc:'EN', major:false, playable:false, baseline:15, desc:'영국과의 오랜 동맹에 따라 협상국에 기운 나라. 1915년부터 본격 참여한다.'},
+  MON:{name:'몬테네그로 왕국', bloc:'EN', major:false, playable:false, baseline:10, desc:'세르비아와 가까운 소국. 1915년부터 본격 참여한다.'},
+};
+const NATION_IDS = Object.keys(NATIONS);
+function isNationActive(n){ return !state.inactiveMinors || !state.inactiveMinors.has(n); }
+
+/* ======================= GENERALS (~96, unlock over time — from the 1905 peacetime officer corps
+   through the war's peak. Roughly 5 available per major nation at start, ~10-13 by Aug 1914, up to
+   15-18 during the war's height.) ======================= */
+const GENERALS = [
+ // --- Germany (18) ---
+ {id:'schlieffen',name:'알프레트 폰 슐리펜',nation:'GER',atk:6,def:7,spd:5,trait:'genius',desc:'참모 전략의 대가: 공격력·방어력 +15% (슐리펜 계획의 설계자)',unlock:turnFor(1905,1)},
+ {id:'goltz',name:'콜마르 폰 데어 골츠',nation:'GER',atk:5,def:8,spd:4,trait:'fortress',desc:'방어력 +25% (군사 이론가, 오스만군 개혁 자문)',unlock:turnFor(1905,1)},
+ {id:'hentsch',name:'리하르트 헨치',nation:'GER',atk:5,def:6,spd:5,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15% (마른 전투 후퇴 명령)',unlock:turnFor(1905,1)},
+ {id:'moltke',name:'헬무트 폰 몰트케(소)',nation:'GER',atk:5,def:5,spd:5,trait:'none',desc:'균형형. 1906년부터 독일군 총참모장.',unlock:turnFor(1905,1)},
+ {id:'falkenhayn',name:'에리히 폰 팔켄하인',nation:'GER',atk:6,def:7,spd:5,trait:'attrition',desc:'아군 사상률 -15%',unlock:turnFor(1905,1)},
+ {id:'hindenburg',name:'파울 폰 힌덴부르크',nation:'GER',atk:6,def:9,spd:5,trait:'east_def',desc:'동부전선 방어력 +25%',unlock:turnFor(1914,8)},
+ {id:'ludendorff',name:'에리히 루덴도르프',nation:'GER',atk:9,def:6,spd:7,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20%',unlock:turnFor(1914,8)},
+ {id:'rupprecht',name:'루프레히트 폰 바이에른',nation:'GER',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +25%',unlock:turnFor(1914,8)},
+ {id:'hoffmann',name:'막스 호프만',nation:'GER',atk:6,def:6,spd:8,trait:'genius',desc:'참모의 귀재: 공격력·방어력 +15% (타넨베르크의 설계자)',unlock:turnFor(1914,8)},
+ {id:'lettow',name:'파울 폰 레토우포어베크',nation:'GER',atk:7,def:9,spd:9,trait:'guerrilla',desc:'게릴라전의 명수: 공격력 +10%, 방어력 +35%',unlock:turnFor(1914,8)},
+ {id:'bulow',name:'카를 폰 뷜로',nation:'GER',atk:7,def:6,spd:5,trait:'outrance',desc:'공격력 +15% (1군 사령관, 마른 전투)',unlock:turnFor(1914,8)},
+ {id:'kluck',name:'알렉산더 폰 클루크',nation:'GER',atk:8,def:5,spd:7,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20% (신속한 진격, 1군 사령관)',unlock:turnFor(1914,8)},
+ {id:'eichhorn',name:'헤르만 폰 아이히호른',nation:'GER',atk:6,def:7,spd:5,trait:'east_def',desc:'동부전선 방어력 +20%',unlock:turnFor(1914,8)},
+ {id:'gallwitz',name:'막스 폰 갈비츠',nation:'GER',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (다전선 경험)',unlock:turnFor(1914,9)},
+ {id:'bothmer',name:'펠릭스 폰 보트머',nation:'GER',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (갈리치아 방면)',unlock:turnFor(1915,1)},
+ {id:'mackensen',name:'아우구스트 폰 마켄젠',nation:'GER',atk:9,def:5,spd:7,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20% (고를리체-타르누프 돌파)',unlock:turnFor(1915,5)},
+ {id:'marwitz',name:'게오르크 폰 데어 마르비츠',nation:'GER',atk:7,def:5,spd:8,trait:'cavalry',desc:'경기병 전투력 +30% (캉브레 전차전 대응)',unlock:turnFor(1917,11)},
+ {id:'below',name:'오토 폰 벨로프',nation:'GER',atk:8,def:5,spd:6,trait:'surprise',desc:'해당 전선 첫 전투 공격력 +25% (카포레토의 기습)',unlock:turnFor(1917,10)},
+ // --- Austria-Hungary (13) ---
+ {id:'krobatin',name:'알렉산더 폰 크로바틴',nation:'AH',atk:5,def:5,spd:5,trait:'none',desc:'균형형. 전쟁상(戰爭相).',unlock:turnFor(1905,1)},
+ {id:'conrad',name:'프란츠 콘라트 폰 회첸도르프',nation:'AH',atk:7,def:4,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20%',unlock:turnFor(1906,1)},
+ {id:'dankl',name:'빅토어 단클',nation:'AH',atk:7,def:4,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20% (갈리치아 초기 공세)',unlock:turnFor(1914,8)},
+ {id:'boehm_ermolli',name:'에두아르트 폰 뵘-에르몰리',nation:'AH',atk:6,def:6,spd:5,trait:'east_def',desc:'동부전선 방어력 +20%',unlock:turnFor(1914,8)},
+ {id:'liposcak',name:'안톤 리포샤크',nation:'AH',atk:6,def:5,spd:6,trait:'reckless',desc:'공격력 +15%, 사상률 +15%',unlock:turnFor(1914,8)},
+ {id:'archduke_friedrich',name:'프리드리히 대공',nation:'AH',atk:4,def:6,spd:4,trait:'none',desc:'균형형. 오스트리아-헝가리군 명목상 최고사령관.',unlock:turnFor(1914,8)},
+ {id:'pflanzer',name:'카를 폰 팔란처-발틴',nation:'AH',atk:6,def:6,spd:6,trait:'east_def',desc:'동부전선 방어력 +20% (부코비나 방면)',unlock:turnFor(1914,8)},
+ {id:'kusmanek',name:'헤르만 쿠스마네크',nation:'AH',atk:4,def:9,spd:3,trait:'engineer_synergy',desc:'공병대 보유 시 방어력 +20%p 추가 (프셰미실 요새 방어전)',unlock:turnFor(1914,9)},
+ {id:'rohr',name:'프란츠 로어 폰 덴타',nation:'AH',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (이손초 방면)',unlock:turnFor(1915,6)},
+ {id:'wurm',name:'벤첼 폰 부름',nation:'AH',atk:5,def:8,spd:4,trait:'isonzo',desc:'이탈리아 전선 방어력 +20%',unlock:turnFor(1915,6)},
+ {id:'boroevic',name:'스베토자르 보로예비치',nation:'AH',atk:5,def:8,spd:4,trait:'isonzo',desc:'이탈리아 전선 방어력 +25%',unlock:turnFor(1915,6)},
+ {id:'kovess',name:'헤르만 쾨베스',nation:'AH',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20%',unlock:turnFor(1916,1)},
+ {id:'archduke_karl',name:'대공 카를',nation:'AH',atk:5,def:6,spd:5,trait:'none',desc:'균형형. 후일의 황제 카를 1세.',unlock:turnFor(1916,1)},
+ // --- Ottoman (9) ---
+ {id:'izzet',name:'아흐메드 이제트 파샤',nation:'OTT',atk:6,def:6,spd:5,trait:'none',desc:'균형형. 캅카스 방면 사령관.',unlock:turnFor(1905,1)},
+ {id:'sanders',name:'오토 리만 폰 잔더스',nation:'OTT',atk:5,def:6,spd:4,trait:'none',desc:'균형형. 독일인 군사 고문단장.',unlock:turnFor(1913,11)},
+ {id:'enver',name:'엔베르 파샤',nation:'OTT',atk:7,def:4,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20% (사르카미시의 교훈)',unlock:turnFor(1914,1)},
+ {id:'djemal',name:'제말 파샤',nation:'OTT',atk:5,def:6,spd:5,trait:'mg_synergy',desc:'기관총 중대 보유 시 방어력 +25%p 추가 (시리아·팔레스타인 방어선)',unlock:turnFor(1914,1)},
+ {id:'vehip',name:'베히프 파샤',nation:'OTT',atk:6,def:7,spd:5,trait:'anatolia',desc:'캅카스·메소포타미아 방어력 +20%',unlock:turnFor(1914,11)},
+ {id:'cevat',name:'제바트 파샤',nation:'OTT',atk:5,def:8,spd:4,trait:'fortress',desc:'방어력 +25% (갈리폴리 방어)',unlock:turnFor(1915,3)},
+ {id:'fevzi',name:'페브지 차크막',nation:'OTT',atk:6,def:7,spd:5,trait:'anatolia',desc:'캅카스·메소포타미아 방어력 +20%',unlock:turnFor(1914,8)},
+ {id:'kemal',name:'무스타파 케말',nation:'OTT',atk:7,def:8,spd:5,trait:'anatolia',desc:'캅카스·메소포타미아 방어력 +30%',unlock:turnFor(1915,4)},
+ {id:'halil_kut',name:'할릴 쿠트',nation:'OTT',atk:7,def:7,spd:5,trait:'anatolia',desc:'캅카스·메소포타미아 방어력 +25% (쿠트 공성전 승리)',unlock:turnFor(1915,4)},
+ // --- France (15) ---
+ {id:'foch',name:'페르디낭 포슈',nation:'FRA',atk:8,def:6,spd:6,trait:'outrance',desc:'공격력 +15%',unlock:turnFor(1905,1)},
+ {id:'joffre',name:'조제프 조프르',nation:'FRA',atk:6,def:6,spd:5,trait:'none',desc:'균형형. 1911년부터 프랑스군 총참모장.',unlock:turnFor(1905,1)},
+ {id:'gallieni',name:'조제프 갈리에니',nation:'FRA',atk:5,def:7,spd:6,trait:'fortress',desc:'방어력 +20% (마른 전투의 설계자)',unlock:turnFor(1905,1)},
+ {id:'lanrezac',name:'샤를 랑르자크',nation:'FRA',atk:5,def:6,spd:5,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15% (샤를루아 전투 후 후퇴 판단)',unlock:turnFor(1914,8)},
+ {id:'maunoury',name:'미셸조제프 모누리',nation:'FRA',atk:6,def:6,spd:6,trait:'outrance',desc:'공격력 +15% (마른 전투, 6군 사령관)',unlock:turnFor(1914,8)},
+ {id:'langle_de_cary',name:'페르낭 드 랑글 드 카리',nation:'FRA',atk:5,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (아르곤 방면)',unlock:turnFor(1914,8)},
+ {id:'petain',name:'필리프 페탱',nation:'FRA',atk:4,def:9,spd:3,trait:'fortress',desc:'방어력 +25% ("그들은 통과하지 못한다")',unlock:turnFor(1916,3)},
+ {id:'fayolle',name:'마리에밀 파욜',nation:'FRA',atk:6,def:6,spd:5,trait:'attrition',desc:'아군 사상률 -10% (솜 전투 경험)',unlock:turnFor(1916,7)},
+ {id:'mangin',name:'샤를 망쟁',nation:'FRA',atk:9,def:4,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +15%',unlock:turnFor(1916,5)},
+ {id:'franchet',name:'루이 프랑셰 데스페레',nation:'FRA',atk:7,def:6,spd:7,trait:'outrance',desc:'공격력 +15% (발칸 방면 전문가)',unlock:turnFor(1916,1)},
+ {id:'micheler',name:'조제프 미슐레',nation:'FRA',atk:8,def:4,spd:5,trait:'reckless',desc:'공격력 +20%, 사상률 +20%',unlock:turnFor(1917,4)},
+ {id:'nivelle',name:'로베르 니벨',nation:'FRA',atk:9,def:3,spd:5,trait:'reckless',desc:'공격력 +25%, 사상률 +30% (실패한 니벨 공세)',unlock:turnFor(1917,4)},
+ {id:'estienne',name:'장바티스트 에스티엔',nation:'FRA',atk:8,def:4,spd:6,trait:'armor',desc:'전차 부대 보유 시 공격력 +35% ("프랑스 전차의 아버지")',unlock:turnFor(1917,4)},
+ {id:'maistre',name:'폴 메스트르',nation:'FRA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20%',unlock:turnFor(1917,5)},
+ {id:'debeney',name:'마리외젠 드베네',nation:'FRA',atk:7,def:5,spd:6,trait:'armor',desc:'전차 부대 보유 시 공격력 +30% (1918년 공세)',unlock:turnFor(1918,3)},
+ // --- UK (15) ---
+ {id:'kitchener',name:'허버트 키치너',nation:'UK',atk:5,def:5,spd:4,trait:'none',desc:'균형형. 전쟁 초기 육군상.',unlock:turnFor(1905,1)},
+ {id:'french',name:'존 프렌치',nation:'UK',atk:5,def:6,spd:5,trait:'none',desc:'균형형 지휘관.',unlock:turnFor(1905,1)},
+ {id:'smith_dorrien',name:'호레이스 스미스도리엔',nation:'UK',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (르카토 전투)',unlock:turnFor(1914,8)},
+ {id:'haig',name:'더글러스 헤이그',nation:'UK',atk:8,def:5,spd:5,trait:'reckless',desc:'공격력 +20%, 사상률 +20%',unlock:turnFor(1914,8)},
+ {id:'birdwood',name:'윌리엄 버드우드',nation:'UK',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (ANZAC 군단, 갈리폴리)',unlock:turnFor(1915,4)},
+ {id:'hamilton',name:'이언 해밀턴',nation:'UK',atk:5,def:4,spd:5,trait:'siege_weak',desc:'포위전에 취약: 방어력 -25% (갈리폴리 작전 실패)',unlock:turnFor(1915,4)},
+ {id:'townshend',name:'찰스 타운센드',nation:'UK',atk:5,def:3,spd:4,trait:'siege_weak',desc:'포위전에 취약: 방어력 -30% (쿠트 공성전의 교훈)',unlock:turnFor(1915,4)},
+ {id:'monro',name:'찰스 먼로',nation:'UK',atk:5,def:6,spd:5,trait:'none',desc:'균형형. 갈리폴리 철수를 지휘.',unlock:turnFor(1915,10)},
+ {id:'rawlinson',name:'헨리 롤린슨',nation:'UK',atk:7,def:5,spd:5,trait:'artillery_synergy',desc:'포병 대대 2개 이상 보유 시 공격력 +20%p 추가 (탄막 사격 전술의 선구자)',unlock:turnFor(1916,7)},
+ {id:'gough',name:'휴버트 고프',nation:'UK',atk:8,def:4,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +25% (파스샹달의 교훈)',unlock:turnFor(1916,7)},
+ {id:'maude',name:'프레더릭 스탠리 모드',nation:'UK',atk:7,def:5,spd:7,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20% (바그다드 함락)',unlock:turnFor(1917,3)},
+ {id:'plumer',name:'허버트 플루머',nation:'UK',atk:6,def:8,spd:5,trait:'fortress',desc:'방어력 +25% (메시느 전투)',unlock:turnFor(1917,6)},
+ {id:'byng',name:'줄리언 빙',nation:'UK',atk:7,def:5,spd:6,trait:'armor',desc:'전차 부대 보유 시 공격력 +30% (캉브레 전투)',unlock:turnFor(1917,11)},
+ {id:'allenby',name:'에드먼드 알렌비',nation:'UK',atk:7,def:5,spd:8,trait:'cavalry',desc:'경기병 전투력 +30%',unlock:turnFor(1917,7)},
+ {id:'monash',name:'존 모나시',nation:'UK',atk:7,def:6,spd:6,trait:'genius',desc:'전술의 귀재: 공격력·방어력 +15% (1918년 공세의 설계자)',unlock:turnFor(1918,1)},
+ // --- Russia (13) ---
+ {id:'ivanov',name:'니콜라이 이바노프',nation:'RUS',atk:5,def:6,spd:4,trait:'none',desc:'균형형 지휘관.',unlock:turnFor(1905,1)},
+ {id:'brusilov',name:'알렉세이 브루실로프',nation:'RUS',atk:9,def:5,spd:6,trait:'surprise',desc:'해당 전선 첫 전투 공격력 +25%',unlock:turnFor(1905,1)},
+ {id:'evert',name:'알렉세이 예베르트',nation:'RUS',atk:4,def:6,spd:4,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15%',unlock:turnFor(1914,8)},
+ {id:'plehve',name:'파벨 플레베',nation:'RUS',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (갈리치아 방면)',unlock:turnFor(1914,8)},
+ {id:'dimitriev',name:'라드코 드미트리예프',nation:'RUS',atk:7,def:5,spd:6,trait:'outrance',desc:'공격력 +15%',unlock:turnFor(1914,8)},
+ {id:'ruzsky',name:'니콜라이 루스키',nation:'RUS',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (우치 작전)',unlock:turnFor(1914,8)},
+ {id:'samsonov',name:'알렉산드르 삼소노프',nation:'RUS',atk:6,def:4,spd:5,trait:'rivalry',desc:'렌넨캄프와 같은 전선에 배치 시 서로 -20% (타넨베르크의 불화)',unlock:turnFor(1914,8)},
+ {id:'rennenkampf',name:'파벨 폰 렌넨캄프',nation:'RUS',atk:6,def:5,spd:6,trait:'rivalry',desc:'삼소노프와 같은 전선에 배치 시 서로 -20% (타넨베르크의 불화)',unlock:turnFor(1914,8)},
+ {id:'yudenich',name:'니콜라이 유데니치',nation:'RUS',atk:7,def:6,spd:6,trait:'caucasus_atk',desc:'캅카스 전선 공격력 +25%',unlock:turnFor(1914,11)},
+ {id:'alekseev',name:'미하일 알렉세예프',nation:'RUS',atk:6,def:6,spd:6,trait:'genius',desc:'참모의 귀재: 공격력·방어력 +15%',unlock:turnFor(1915,8)},
+ {id:'kaledin',name:'알렉세이 칼레딘',nation:'RUS',atk:8,def:5,spd:8,trait:'cossack',desc:'카자크 기병 부대 보유 시 공격력 +30% (브루실로프 공세)',unlock:turnFor(1916,5)},
+ {id:'denikin',name:'안톤 데니킨',nation:'RUS',atk:7,def:5,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +15%',unlock:turnFor(1916,6)},
+ {id:'kornilov',name:'라브르 코르닐로프',nation:'RUS',atk:8,def:5,spd:7,trait:'reckless',desc:'공격력 +20%, 사상률 +15%',unlock:turnFor(1917,3)},
+ // --- Italy (8) ---
+ {id:'cadorna',name:'루이지 카도르나',nation:'ITA',atk:7,def:4,spd:4,trait:'frontal',desc:'공격력 +20%, 방어력 -15%',unlock:turnFor(1915,5)},
+ {id:'aosta',name:'에마누엘레 필리베르토(아오스타 공)',nation:'ITA',atk:6,def:6,spd:6,trait:'outrance',desc:'공격력 +15% (3군 사령관)',unlock:turnFor(1915,5)},
+ {id:'brusati',name:'로베르토 브루사티',nation:'ITA',atk:5,def:5,spd:5,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15%',unlock:turnFor(1916,5)},
+ {id:'pecori_giraldi',name:'굴리엘모 페코리 지랄디',nation:'ITA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (그라파 산 방어)',unlock:turnFor(1916,6)},
+ {id:'diaz',name:'아르만도 디아즈',nation:'ITA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (피아베 전투)',unlock:turnFor(1917,11)},
+ {id:'badoglio',name:'피에트로 바돌리오',nation:'ITA',atk:5,def:5,spd:5,trait:'none',desc:'균형형 지휘관.',unlock:turnFor(1917,11)},
+ {id:'montuori',name:'루카 몬투오리',nation:'ITA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (피아베 전투)',unlock:turnFor(1917,11)},
+ {id:'giardino',name:'가에타노 자르디노',nation:'ITA',atk:7,def:6,spd:6,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20% (비토리오 베네토)',unlock:turnFor(1918,6)},
+ // --- Serbia (5) ---
+ {id:'putnik',name:'라도미르 푸트니크',nation:'SER',atk:5,def:8,spd:4,trait:'homeland',desc:'발칸 전선 방어력 +30%',unlock:turnFor(1905,1)},
+ {id:'misic',name:'지보인 미시치',nation:'SER',atk:6,def:7,spd:5,trait:'homeland',desc:'발칸 전선 방어력 +25%',unlock:turnFor(1905,1)},
+ {id:'stepanovic',name:'스테파 스테파노비치',nation:'SER',atk:6,def:6,spd:5,trait:'none',desc:'균형형 지휘관.',unlock:turnFor(1905,1)},
+ {id:'bojovic',name:'페타르 보요비치',nation:'SER',atk:7,def:6,spd:5,trait:'desperate',desc:'전투력 50% 이하일 때 공격력 +35% (콜루바라 전투의 반격)',unlock:turnFor(1914,8)},
+ {id:'jurisic_sturm',name:'파블레 유리시치 슈투름',nation:'SER',atk:6,def:7,spd:5,trait:'homeland',desc:'발칸 전선 방어력 +25%',unlock:turnFor(1914,8)},
+ {id:'vasic',name:'밀로시 바시치',nation:'SER',atk:6,def:6,spd:5,trait:'homeland',desc:'발칸 전선 방어력 +20% (티모크군 사령관)',unlock:turnFor(1914,9)},
+ {id:'ser_gen1',name:'드라간 아브라모비치(가상)',nation:'SER',atk:5,def:7,spd:5,trait:'homeland',desc:'발칸 전선 방어력 +20% (가상 인물 — 기록이 부족한 소부대 지휘관을 대신함)',unlock:turnFor(1915,3)},
+ {id:'ser_gen2',name:'네나드 요바노비치(가상)',nation:'SER',atk:6,def:6,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20% (가상 인물)',unlock:turnFor(1915,9)},
+ {id:'ser_gen3',name:'라자르 페트로비치(가상)',nation:'SER',atk:5,def:6,spd:4,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15% (가상 인물)',unlock:turnFor(1916,3)},
+ // --- Germany, additional (+6) ---
+ {id:'kuhl',name:'헤르만 폰 쿨',nation:'GER',atk:5,def:6,spd:5,trait:'genius',desc:'참모의 귀재: 공격력·방어력 +15% (1군 참모장, 서부전선 기획)',unlock:turnFor(1914,8)},
+ {id:'fritz_below',name:'프리츠 폰 벨로프',nation:'GER',atk:5,def:8,spd:4,trait:'fortress',desc:'방어력 +25% (솜 전투 방어전, 1군 사령관)',unlock:turnFor(1916,7)},
+ {id:'fabeck',name:'막스 폰 파베크',nation:'GER',atk:8,def:5,spd:6,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20% (이프르 공세 지휘)',unlock:turnFor(1914,10)},
+ {id:'seeckt',name:'한스 폰 제크트',nation:'GER',atk:6,def:6,spd:6,trait:'genius',desc:'참모의 귀재: 공격력·방어력 +15% (고를리체-타르누프 기획)',unlock:turnFor(1915,5)},
+ {id:'einem',name:'카를 폰 아이넴',nation:'GER',atk:5,def:8,spd:4,trait:'fortress',desc:'방어력 +25% (샹파뉴 방어전, 3군 사령관)',unlock:turnFor(1915,9)},
+ {id:'morgen',name:'쿠르트 폰 모르겐',nation:'GER',atk:8,def:5,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20%',unlock:turnFor(1916,2)},
+ // --- Austria-Hungary, additional (+5) ---
+ {id:'sarkotic',name:'슈테판 사르코티치',nation:'AH',atk:6,def:6,spd:5,trait:'balkan_occupier',desc:'발칸 전선 공격력 +20% (보스니아·몬테네그로 점령행정관)',unlock:turnFor(1915,1)},
+ {id:'krauss',name:'알프레트 크라우스',nation:'AH',atk:6,def:7,spd:5,trait:'isonzo',desc:'이탈리아 전선 방어력 +20% (카포레토 공세 기획)',unlock:turnFor(1917,10)},
+ {id:'weber',name:'빅토어 베버 폰 베베나우',nation:'AH',atk:5,def:8,spd:4,trait:'engineer_synergy',desc:'공병대 보유 시 방어력 +20%p 추가 (프셰미실 요새 사령관)',unlock:turnFor(1914,9)},
+ {id:'kirchbach',name:'귄터 폰 키르히바흐',nation:'AH',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (동부전선 군단장)',unlock:turnFor(1914,11)},
+ {id:'roth',name:'요제프 로트',nation:'AH',atk:6,def:6,spd:5,trait:'east_def',desc:'동부전선 방어력 +20%',unlock:turnFor(1914,8)},
+ // --- Ottoman, additional (+4) ---
+ {id:'altay',name:'파흐레딘 알타이',nation:'OTT',atk:7,def:5,spd:8,trait:'cavalry',desc:'경기병 전투력 +30% (팔레스타인 기병군)',unlock:turnFor(1917,6)},
+ {id:'ali_ihsan',name:'알리 이흐산 사비스',nation:'OTT',atk:6,def:7,spd:5,trait:'anatolia',desc:'캅카스·메소포타미아 방어력 +20%',unlock:turnFor(1915,6)},
+ {id:'yakup_sevki',name:'야쿠프 셰브키 수바시',nation:'OTT',atk:6,def:7,spd:5,trait:'anatolia',desc:'캅카스·메소포타미아 방어력 +20%',unlock:turnFor(1916,1)},
+ {id:'refet',name:'레페트 벨레',nation:'OTT',atk:7,def:5,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20%',unlock:turnFor(1916,5)},
+ // --- France, additional (+6) ---
+ {id:'mitry',name:'앙투안 드 미트리',nation:'FRA',atk:7,def:5,spd:8,trait:'cavalry',desc:'경기병 전투력 +30% (기병군단 사령관)',unlock:turnFor(1914,8)},
+ {id:'duchene',name:'드니 오귀스트 뒤셴',nation:'FRA',atk:8,def:4,spd:5,trait:'frontal',desc:'공격력 +20%, 방어력 -15% (슈맹 데 담 방어선 배치 논란)',unlock:turnFor(1918,5)},
+ {id:'driant',name:'에밀 드리앙',nation:'FRA',atk:5,def:8,spd:4,trait:'fortress',desc:'방어력 +25% (베르됭 초기 방어전의 상징)',unlock:turnFor(1914,8)},
+ {id:'guillaumat',name:'루이 기요마',nation:'FRA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (베르됭·살로니카 방면)',unlock:turnFor(1916,4)},
+ {id:'humbert',name:'조르주 위베르',nation:'FRA',atk:7,def:6,spd:5,trait:'outrance',desc:'공격력 +15% (3군 사령관)',unlock:turnFor(1916,1)},
+ {id:'gerard',name:'오귀스탱 제라르',nation:'FRA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20%',unlock:turnFor(1915,1)},
+ // --- UK, additional (+6) ---
+ {id:'wilson',name:'헨리 윌슨',nation:'UK',atk:6,def:6,spd:6,trait:'coalition_bonus',desc:'같은 전선에 2개국 이상 아군이 있으면 공격력 +10% (연합군 조정의 달인, 후일 帝國참모총장)',unlock:turnFor(1918,2)},
+ {id:'currie',name:'아서 커리',nation:'UK',atk:7,def:6,spd:6,trait:'genius',desc:'전술의 귀재: 공격력·방어력 +15% (캐나다군단 사령관, 비미 리지)',unlock:turnFor(1917,4)},
+ {id:'haldane',name:'에일머 홀데인',nation:'UK',atk:5,def:8,spd:4,trait:'fortress',desc:'방어력 +25% (군단장)',unlock:turnFor(1915,3)},
+ {id:'horne',name:'헨리 혼',nation:'UK',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (1군 사령관, 비미 리지)',unlock:turnFor(1916,9)},
+ {id:'maxse',name:'아이보 맥스',nation:'UK',atk:7,def:6,spd:5,trait:'outrance',desc:'공격력 +15% (훈련 교리 개혁가)',unlock:turnFor(1916,7)},
+ {id:'robertson',name:'윌리엄 로버트슨',nation:'UK',atk:5,def:6,spd:5,trait:'none',desc:'균형형. 제국참모총장(CIGS).',unlock:turnFor(1915,12)},
+ // --- Russia, additional (+5) ---
+ {id:'sukhomlinov',name:'블라디미르 수호믈리노프',nation:'RUS',atk:4,def:5,spd:4,trait:'unprepared',desc:'공격력 -15% (전쟁 전 군비 태만의 상징, 전쟁상)',unlock:turnFor(1905,1)},
+ {id:'gurko',name:'바실리 구르코',nation:'RUS',atk:7,def:5,spd:8,trait:'cavalry',desc:'경기병 전투력 +30%',unlock:turnFor(1914,8)},
+ {id:'yanushkevich',name:'니콜라이 야누시케비치',nation:'RUS',atk:4,def:6,spd:4,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15% (전쟁 초기 참모총장)',unlock:turnFor(1914,8)},
+ {id:'danilov',name:'유리 다닐로프',nation:'RUS',atk:6,def:6,spd:6,trait:'genius',desc:'참모의 귀재: 공격력·방어력 +15% (스타브카 병참총감)',unlock:turnFor(1914,8)},
+ {id:'kuropatkin',name:'알렉세이 쿠로파트킨',nation:'RUS',atk:5,def:7,spd:4,trait:'fortress',desc:'방어력 +20% (북부전선 사령관)',unlock:turnFor(1916,2)},
+ // --- Italy, additional (+5) ---
+ {id:'capello',name:'루이지 카펠로',nation:'ITA',atk:8,def:4,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20% (2군 사령관, 카포레토)',unlock:turnFor(1917,5)},
+ {id:'caviglia',name:'엔리코 카빌리아',nation:'ITA',atk:7,def:6,spd:6,trait:'blitz',desc:'해당 전선 첫 전투 공격력 +20% (비토리오 베네토, 8군 사령관)',unlock:turnFor(1918,6)},
+ {id:'porro',name:'카를로 포로',nation:'ITA',atk:5,def:6,spd:5,trait:'cautious',desc:'신중형: 공격력 -10%, 방어력 +15% (참모차장)',unlock:turnFor(1915,5)},
+ {id:'pollio',name:'알베르토 폴리오',nation:'ITA',atk:5,def:5,spd:5,trait:'none',desc:'균형형. 전쟁 전 참모총장.',unlock:turnFor(1905,1)},
+ {id:'frugoni',name:'피에트로 프루고니',nation:'ITA',atk:6,def:7,spd:5,trait:'fortress',desc:'방어력 +20% (2군 초기 사령관)',unlock:turnFor(1915,5)},
+ // --- Minor 1915 entrants: kept deliberately small (2 officers each), since these nations are not
+ // yet player-selectable and only need enough of a roster to eventually support their divisions ---
+ {id:'bul_gen1',name:'니콜라 제코프',nation:'BUL',atk:6,def:6,spd:5,trait:'balkan_occupier',desc:'발칸 전선 공격력 +20% (불가리아군 총사령관)',unlock:turnFor(1915,1)},
+ {id:'bul_gen2',name:'스테판 토셰프',nation:'BUL',atk:5,def:7,spd:4,trait:'fortress',desc:'방어력 +25%',unlock:turnFor(1915,6)},
+ {id:'rom_gen1',name:'콘스탄틴 프레잔',nation:'ROM',atk:6,def:6,spd:5,trait:'none',desc:'균형형. 루마니아군 사령관.',unlock:turnFor(1915,1)},
+ {id:'rom_gen2',name:'알렉산드루 아베레스쿠',nation:'ROM',atk:7,def:5,spd:6,trait:'reckless',desc:'공격력 +20%, 사상률 +20%',unlock:turnFor(1915,8)},
+ {id:'gre_gen1',name:'파나요티스 다글리스',nation:'GRE',atk:6,def:6,spd:5,trait:'none',desc:'균형형. 그리스군 참모총장.',unlock:turnFor(1915,1)},
+ {id:'gre_gen2',name:'레오니다스 파라스케부풀로스',nation:'GRE',atk:5,def:7,spd:4,trait:'fortress',desc:'방어력 +20%',unlock:turnFor(1915,9)},
+ {id:'por_gen1',name:'페르난두 타마냐니',nation:'POR',atk:5,def:6,spd:5,trait:'unprepared',desc:'원정군 사령관 — 공격력 -15% (준비 부족)',unlock:turnFor(1915,1)},
+ {id:'por_gen2',name:'조제 노르통 드 마토스',nation:'POR',atk:5,def:5,spd:5,trait:'none',desc:'균형형.',unlock:turnFor(1916,1)},
+ {id:'mon_gen1',name:'야누스 부코티치',nation:'MON',atk:5,def:6,spd:4,trait:'homeland',desc:'발칸 전선 방어력 +20%',unlock:turnFor(1915,1)},
+ {id:'mon_gen2',name:'미트라르 마르티노비치',nation:'MON',atk:5,def:5,spd:4,trait:'unprepared',desc:'공격력 -15% (준비 부족)',unlock:turnFor(1915,6)},
+];
+// grade every general S/A/B/C/D by a composite of atk+def+spd (relative to the whole 147-officer roster),
+// then apply a small but real stat spread on top of their historical-flavor base numbers so "S급" and
+// "D급" commanders are meaningfully different to command — not just flavor text. This runs once at load.
+(function gradeGenerals(){
+  const scored = GENERALS.map(g=>({g, score:g.atk+g.def+g.spd}));
+  scored.sort((a,b)=>b.score-a.score);
+  const n = scored.length;
+  const GRADE_BONUS = {
+    S:{atk:3,def:3,spd:2}, A:{atk:1,def:1,spd:1}, B:{atk:0,def:0,spd:0},
+    C:{atk:-1,def:-1,spd:0}, D:{atk:-3,def:-2,spd:-1},
+  };
+  scored.forEach((s,i)=>{
+    const pct = i/n;
+    const grade = pct<0.08?'S' : pct<0.28?'A' : pct<0.75?'B' : pct<0.93?'C' : 'D';
+    const b = GRADE_BONUS[grade];
+    s.g.grade = grade;
+    s.g.atk = Math.max(2, s.g.atk+b.atk);
+    s.g.def = Math.max(2, s.g.def+b.def);
+    s.g.spd = Math.max(2, s.g.spd+b.spd);
+  });
+})();
+// re-pace unlock schedule: instead of front-loading several officers at game start, every nation
+// unlocks exactly one general every 10 turns (~10 months), in roughly the same relative order as
+// their original historical-flavor unlock turns above.
+(function scheduleGeneralUnlocks(){
+  const byNation = {};
+  GENERALS.forEach(g=>{ (byNation[g.nation]=byNation[g.nation]||[]).push(g); });
+  Object.values(byNation).forEach(list=>{
+    list.sort((a,b)=>a.unlock-b.unlock);
+    list.forEach((g,i)=>{ g.unlock = turnFor(1905,1) + i*10; });
+  });
+})();
+
+/* ======================= ADMIRALS (assignable as flagship commanders) ======================= */
+const ADMIRALS = [
+ {id:'tirpitz',name:'알프레트 폰 티르피츠',nation:'GER',atkBonus:3,defBonus:6,desc:'대양함대 창설자. 방어에 강함.',unlock:turnFor(1905,1)},
+ {id:'scheer',name:'라인하르트 셰어',nation:'GER',atkBonus:7,defBonus:4,desc:'유틀란트 해전 지휘',unlock:turnFor(1914,8)},
+ {id:'hipper',name:'프란츠 폰 히퍼',nation:'GER',atkBonus:8,defBonus:3,desc:'전투순양함대 지휘, 공격적',unlock:turnFor(1914,8)},
+ {id:'spee',name:'막시밀리안 폰 슈페',nation:'GER',atkBonus:6,defBonus:5,desc:'동아시아 분함대 지휘 (코로넬·포클랜드)',unlock:turnFor(1914,8)},
+ {id:'fisher',name:'존 피셔',nation:'UK',atkBonus:4,defBonus:6,desc:'해군 개혁가, 드레드노트의 아버지',unlock:turnFor(1905,1)},
+ {id:'jellicoe',name:'존 젤리코',nation:'UK',atkBonus:5,defBonus:8,desc:'대함대 총사령관, 신중한 지휘',unlock:turnFor(1914,8)},
+ {id:'beatty',name:'데이비드 비티',nation:'UK',atkBonus:8,defBonus:4,desc:'전투순양함대 지휘, 공격적',unlock:turnFor(1914,8)},
+ {id:'keyes',name:'로저 케이스',nation:'UK',atkBonus:7,defBonus:5,desc:'제브뤼헤 습격 지휘',unlock:turnFor(1918,4)},
+ {id:'darrieus',name:'루이 다르티주 뒤 푸르네',nation:'FRA',atkBonus:5,defBonus:5,desc:'지중해 함대 사령관',unlock:turnFor(1915,1)},
+ {id:'kolchak',name:'알렉산드르 콜차크',nation:'RUS',atkBonus:7,defBonus:5,desc:'흑해함대 사령관',unlock:turnFor(1916,7)},
+ {id:'haus',name:'안톤 하우스',nation:'AH',atkBonus:4,defBonus:6,desc:'오스트리아-헝가리 해군 총사령관',unlock:turnFor(1905,1)},
+ {id:'horthy',name:'미클로시 호르티',nation:'AH',atkBonus:7,defBonus:5,desc:'아드리아해 공세 지휘, 후일 헝가리 섭정',unlock:turnFor(1917,2)},
+ {id:'revel',name:'파올로 타온 디 레벨',nation:'ITA',atkBonus:5,defBonus:6,desc:'이탈리아 해군 참모총장',unlock:turnFor(1915,5)},
+ {id:'souchon',name:'빌헬름 수숀',nation:'OTT',atkBonus:7,defBonus:5,desc:'독일 출신. 괴벤·브레슬라우 함으로 오스만 참전을 이끔',unlock:turnFor(1914,8)},
+ {id:'schroder',name:'루트비히 폰 슈뢰더',nation:'GER',atkBonus:4,defBonus:7,desc:'플랑드르 U보트 전단 지휘, 방어에 강함',unlock:turnFor(1914,10)},
+ {id:'pohl',name:'후고 폰 폴',nation:'GER',atkBonus:3,defBonus:6,desc:'대양함대 사령관(1915-16), 신중한 지휘',unlock:turnFor(1915,2)},
+ {id:'wemyss',name:'로슬린 웨미스',nation:'UK',atkBonus:5,defBonus:6,desc:'제1해군경(1917-19), 균형형',unlock:turnFor(1917,12)},
+ {id:'sturdee',name:'프레더릭 스터디',nation:'UK',atkBonus:8,defBonus:4,desc:'포클랜드 해전 승리, 공격적',unlock:turnFor(1914,12)},
+ {id:'jackson',name:'헨리 잭슨',nation:'UK',atkBonus:4,defBonus:6,desc:'제1해군경(1915-16), 균형형',unlock:turnFor(1915,5)},
+ {id:'lapeyrere',name:'오귀스탱 부에 드 라페레르',nation:'FRA',atkBonus:6,defBonus:5,desc:'지중해 함대 사령관 초기 지휘',unlock:turnFor(1905,1)},
+ {id:'eberhardt',name:'안드레이 에베르하르트',nation:'RUS',atkBonus:4,defBonus:7,desc:'흑해함대 사령관(콜차크 이전), 방어에 강함',unlock:turnFor(1905,1)},
+ {id:'njegovan',name:'막시밀리안 네고반',nation:'AH',atkBonus:5,defBonus:6,desc:'오스트리아-헝가리 해군 총사령관(1917-18)',unlock:turnFor(1917,3)},
+ {id:'abruzzi',name:'루이지 아메데오(아브루치 공)',nation:'ITA',atkBonus:8,defBonus:4,desc:'아드리아해 함대 사령관, 공격적',unlock:turnFor(1915,5)},
+ {id:'orbay',name:'라우프 오르바이',nation:'OTT',atkBonus:6,defBonus:5,desc:'괴벤 함 승조원 출신, 균형형',unlock:turnFor(1914,8)},
+];
+(function gradeAdmirals(){
+  const scored = ADMIRALS.map(a=>({a, score:a.atkBonus+a.defBonus}));
+  scored.sort((x,y)=>y.score-x.score);
+  const n = scored.length;
+  scored.forEach((s,i)=>{
+    const pct = i/n;
+    s.a.grade = pct<0.12?'S' : pct<0.32?'A' : pct<0.75?'B' : pct<0.92?'C' : 'D';
+  });
+})();
+
+/* ======================= BATTALIONS ======================= */
+// Every division now holds at most 3 "주력(core)" battalions + 7 "보조(aux)" battalions (10 total).
+// Core battalions are the main strike/combat arms: fewer slots, but each costs more manpower and hits
+// much harder. Aux battalions are cheaper support/line troops that fill out the rest of the division.
+// Each type also carries a short traitDesc describing its passive battlefield behavior (many tie directly
+// into the new node-map mechanics: flanking deep-strikes off the current frontier, and siege vs fortresses).
+const BATTALION_TYPES = {
+ // -- aux (line/support, cheap, up to 7 per division) --
+ inf_line:    {name:'전열보병',   tier:'aux', atk:6, def:6, cost:10, traitDesc:'표준형 — 어떤 상황에서도 무난한 성능'},
+ inf_reserve: {name:'예비보병',   tier:'aux', atk:4, def:5, cost:6,  traitDesc:'저비용 — 방어 시 손실 완화', defenseDmgMul:0.94},
+ cav_light:   {name:'경기병',     tier:'aux', atk:5, def:3, cost:12, traitDesc:'정찰·기동 — 우회 공격 시 공격력 +12%', flankAtkMul:1.12},
+ art_field:   {name:'야포',       tier:'aux', atk:7, def:2, cost:16, traitDesc:'야전 지원 — 요새가 아닌 지역 공격 시 안정적'},
+ art_mountain:{name:'산악포',     tier:'aux', atk:6, def:3, cost:18, traitDesc:'산악 지형 특화'},
+ mg:          {name:'기관총 중대', tier:'aux', atk:3, def:9, cost:14, traitDesc:'고정 방어 — 사단이 방어전을 치를 때 피해 -10%', defenseDmgMul:0.9},
+ engineer:    {name:'공병대',     tier:'aux', atk:1, def:5, cost:10, traitDesc:'공성 지원 — 요새 공략 시 공격력 +10%', fortAtkMul:1.10},
+ signal_corps:{name:'통신대',     tier:'aux', atk:2, def:2, cost:12, note:'사단 전체 공격력·방어력 +5%', traitDesc:'사단 전체 지휘통제 +5%'},
+ // -- core (main strike arms, up to 3 per division, higher manpower cost & combat power) --
+ inf_storm:   {name:'돌격보병',   tier:'core', atk:12, def:5, cost:22, traitDesc:'돌격 전문 — 우회 공격 시 공격력 +12%', flankAtkMul:1.12},
+ cav_heavy:   {name:'중기병',     tier:'core', atk:10, def:5, cost:26, traitDesc:'기병 돌파 — 우회 공격 시 공격력 +18%', flankAtkMul:1.18},
+ art_heavy:   {name:'중포',       tier:'core', atk:13, def:2, cost:32, traitDesc:'공성포 — 요새 공략 시 공격력 +20%', fortAtkMul:1.20},
+ // -- core: nation-unique elites, unlocked via research --
+ cossack_cav:   {name:'카자크 기병',  tier:'core', atk:11, def:5, cost:24, nationOnly:'RUS', requiresResearch:'cossackTradition', traitDesc:'초원 기동 — 우회 공격 시 공격력 +18%', flankAtkMul:1.18},
+ alpini:        {name:'알피니(산악보병)', tier:'core', atk:9, def:8, cost:24, nationOnly:'ITA', requiresResearch:'mountainDoctrine', traitDesc:'산악전 정예 — 산악 전선 방어력 +15%'},
+ sturmtruppen:  {name:'슈투름트루펜', tier:'core', atk:14, def:4, cost:28, nationOnly:'GER', requiresResearch:'infiltration', traitDesc:'침투 전술 — 우회 공격 시 공격력 +15%', flankAtkMul:1.15},
+ zouave:        {name:'주아브 연대',  tier:'core', atk:11, def:6, cost:23, nationOnly:'FRA', requiresResearch:'zouaveRegs', traitDesc:'식민지 정예 — 공격력 안정적'},
+ highlander:    {name:'하이랜드 연대', tier:'core', atk:10, def:7, cost:23, nationOnly:'UK', requiresResearch:'highlandRegs', traitDesc:'백병전 정예 — 방어력 우수'},
+ // -- core: universal tech, unlocked via research, cost extra materiel --
+ armored_car: {name:'장갑차',   tier:'core', atk:11, def:7, cost:30, steelCost:20, requiresResearch:'motorization', traitDesc:'기계화 정찰 — 우회 공격 시 공격력 +18%', flankAtkMul:1.18},
+ tank_mark:   {name:'마크 전차', tier:'core', atk:17, def:11, cost:42, steelCost:50, oilCost:25, requiresResearch:'armoredWarfare', traitDesc:'기갑 돌파 — 우회 공격 시 공격력 +22%, 요새 공략 +10%', flankAtkMul:1.22, fortAtkMul:1.10},
+ gas_troops:  {name:'화학전 부대', tier:'core', atk:15, def:3, cost:26, steelCost:14, requiresResearch:'chemicalWarfare', traitDesc:'화학전 — 방어측 사기 저하로 공격력 +15%, 방어력 매우 낮음'},
+ flame_troops:{name:'화염방사병', tier:'core', atk:16, def:4, cost:27, steelCost:16, requiresResearch:'shockPioneers', traitDesc:'참호 소탕 전문 — 요새 공략 시 공격력 +25%', fortAtkMul:1.25},
+};
+const MAX_CORE = 3;   // 주력 대대: 최대 3개
+const MAX_AUX = 7;    // 보조 대대: 최대 7개
+const MAX_BATTALIONS = MAX_CORE + MAX_AUX; // 10
+const MAX_PER_BATTALION_TYPE = 3; // per-division cap on duplicates of a single battalion type
+function coreCount(d){ return d.battalions.filter(bid=>BATTALION_TYPES[bid].tier==='core').length; }
+function auxCount(d){ return d.battalions.filter(bid=>BATTALION_TYPES[bid].tier==='aux').length; }
+
+/* ======================= THEATRES & PROVINCE CHAINS ======================= */
+// each chain runs from side1's rear to side2's rear; provinces flip ownership as frontProgress moves
+const FRONTS = {
+ western:{ name:'서부전선', side1:['GER'], side2:['FRA','UK'], volatility:0.35, seaZone:'northsea',
+   chain:['쾰른(獨 후방)','아헨','리에주','안트베르펜 요새','브뤼셀','릴','아라스','이프르','아미앵','솜','베르됭','마른','파리 근교(佛 후방)'] },
+ eastern:{ name:'동부전선', side1:['GER','AH'], side2:['RUS'], volatility:0.6, seaZone:'baltic',
+   chain:['베를린 근교(獨 후방)','포즈난','브롬베르크','타넨베르크','마주리아','바르샤바','우치','루블린','브레스트-리토프스크','갈리치아(르비우)','프셰미실 요새','부코비나','민스크','상트페테르부르크 근교(露 후방)'] },
+ balkan:{ name:'발칸전선', side1:['AH'], side2:['SER'], volatility:0.7, seaZone:null,
+   chain:['부다페스트 근교(墺 후방)','사라예보','드리나','발예보','베오그라드','크라구예바츠','니시','스코페(塞 후방)'] },
+ italian:{ name:'이탈리아 전선', side1:['AH'], side2:['ITA'], volatility:0.45, seaZone:'adriatic',
+   chain:['인스브루크(墺 후방)','트렌토','이손초','고리치아','카포레토','트리에스테','우디네','베네치아 근교(伊 후방)'] },
+ caucasus:{ name:'캅카스 전선', side1:['OTT'], side2:['RUS'], volatility:0.8, seaZone:'blacksea',
+   chain:['앙카라 근교(奧 후방)','시바스','에르주룸','반','카르스','트빌리시','바쿠 근교(露 후방)'] },
+ mesopotamia:{ name:'메소포타미아 전선', side1:['OTT'], side2:['UK'], volatility:0.8, seaZone:'eastmed',
+   chain:['모술(奧 후방)','티크리트','사마라','바그다드','쿠트 알아마라','나시리야','바스라(英 후방)'] },
+};
+
+/* ======================= NAVY ======================= */
+const SEA_ZONES = {
+ northsea:{ name:'북해', nations:['GER','UK'] },
+ baltic:{ name:'발트해', nations:['GER','RUS'] },
+ adriatic:{ name:'아드리아해', nations:['AH','ITA'] },
+ blacksea:{ name:'흑해', nations:['OTT','RUS'] },
+ eastmed:{ name:'동지중해', nations:['OTT','UK','FRA','ITA'] },
+};
+const SHIP_TYPES = {
+ destroyer:{ name:'구축함', atk:4, def:4, cost:20, reqShipyard:1 },
+ cruiser:{ name:'순양함', atk:7, def:6, cost:40, reqShipyard:2 },
+ battleship:{ name:'전함', atk:12, def:12, cost:80, reqShipyard:3 },
+ submarine:{ name:'잠수함', atk:9, def:3, cost:35, reqShipyard:2 },
+ carrier:{ name:'항공모함', atk:16, def:10, cost:150, reqShipyard:99, requiresResearch:'carrierDev' },
+};
+const SQUADRON_SIZE = 3; // ships per zone are grouped into numbered squadrons ("제N함단") of this size
+
+/* ======================= INDUSTRY (base infrastructure, paid in industryPoints) ======================= */
+const INDUSTRY_CATS = {
+ factory:{ name:'군수공장', desc:'산업력 생산과 병력 보충 속도를 늘립니다.' },
+ shipyard:{ name:'조선소', desc:'더 높은 등급의 군함을 건조할 수 있게 합니다.' },
+ rail:{ name:'철도망', desc:'보급을 개선해 배치된 사단의 전선 기여도를 늘립니다.' },
+};
+
+/* ======================= RESEARCH ======================= */
+// production research: leveled 1-5, paid in 지식(knowledge), boosts resource generation
+const PRODUCTION_RESEARCH = {
+ industryTech:{ name:'산업 기술', desc:'산업력 생산 +15%p/레벨', maxLv:5, costFn:lv=>40+lv*35 },
+ steelworks:  { name:'제철 기술', desc:'강철 생산을 시작하고 늘립니다 (레벨×6/턴)', maxLv:5, costFn:lv=>45+lv*35 },
+ oilfields:   { name:'유전 개발', desc:'원유 생산을 시작하고 늘립니다 (레벨×5/턴)', maxLv:5, costFn:lv=>50+lv*40 },
+ academy:     { name:'군사 학교', desc:'지식 생산 +1.5/레벨', maxLv:5, costFn:lv=>50+lv*30 },
+ logistics:   { name:'병참 개혁', desc:'병력 보충 속도 +8/레벨', maxLv:5, costFn:lv=>45+lv*30 },
+ munitions:   { name:'군수 효율화', desc:'대대 편성 시 강철·원유 소모 -5%p/레벨', maxLv:5, costFn:lv=>55+lv*35 },
+ fortification:{ name:'요새화 기술', desc:'아군이 보유한 요새·후방 거점 도시의 최대 체력 +10/레벨', maxLv:5, costFn:lv=>50+lv*35 },
+ intelligence:{ name:'첩보 기술', desc:'선동·최후통첩 등 공작 서신의 성공 확률 +3%p/레벨', maxLv:5, costFn:lv=>45+lv*30 },
+};
+// ability research: one-time unlocks, paid in knowledge/steel/oil, unlock battalions/ships or grant flat bonuses
+const ABILITY_RESEARCH = [
+ {id:'infiltration',name:'침투 전술',desc:'돌격 침투 전술을 정교화하여 슈투름트루펜을 편성할 수 있게 합니다.',nationOnly:'GER',unlockBattalion:'sturmtruppen',cost:{knowledge:80}},
+ {id:'cossackTradition',name:'카자크 전통 편성',desc:'카자크 기병을 정규군으로 편입시킵니다.',nationOnly:'RUS',unlockBattalion:'cossack_cav',cost:{knowledge:60}},
+ {id:'mountainDoctrine',name:'산악전 교리',desc:'알피니(산악보병) 부대를 편성할 수 있게 합니다.',nationOnly:'ITA',unlockBattalion:'alpini',cost:{knowledge:60}},
+ {id:'zouaveRegs',name:'주아브 정예연대',desc:'식민지 정예 보병 연대를 편성할 수 있게 합니다.',nationOnly:'FRA',unlockBattalion:'zouave',cost:{knowledge:60}},
+ {id:'highlandRegs',name:'하이랜드 연대 편성',desc:'스코틀랜드 하이랜드 연대를 편성할 수 있게 합니다.',nationOnly:'UK',unlockBattalion:'highlander',cost:{knowledge:60}},
+ {id:'motorization',name:'자동차화',desc:'장갑차 부대를 편성할 수 있게 합니다.',unlockBattalion:'armored_car',cost:{knowledge:100,steel:30}},
+ {id:'armoredWarfare',name:'기갑전 교리',desc:'초기형 전차(마크 전차) 부대를 편성할 수 있게 합니다.',requires:['motorization'],unlockBattalion:'tank_mark',cost:{knowledge:180,steel:80,oil:40}},
+ {id:'navalDoctrine',name:'대양 해군 독트린',desc:'보유한 모든 함선의 전투력을 +10% 늘립니다.',cost:{knowledge:120}},
+ {id:'carrierDev',name:'항공모함 개발',desc:'항공모함을 건조할 수 있게 합니다.',requires:['navalDoctrine'],unlockShip:'carrier',cost:{knowledge:250,steel:150,oil:100}},
+ {id:'staffCollege',name:'참모 대학',desc:'모든 주력 사단의 전선 기여도를 +10% 늘립니다.',cost:{knowledge:150}},
+ {id:'creepingBarrage',name:'이동탄막 사격',desc:'포병 대대를 보유한 사단의 공격력을 +8% 늘립니다.',cost:{knowledge:90}},
+ {id:'defenseInDepth',name:'종심 방어 교리',desc:'대대 3개 이상을 편성한 사단의 방어력을 +8% 늘립니다.',cost:{knowledge:90}},
+ {id:'railMobility',name:'전선 철도 기동',desc:'철도망 레벨에 따른 사단 전선 기여도 보너스를 50% 더 늘립니다.',cost:{knowledge:100,steel:40}},
+ {id:'chemicalWarfare',name:'화학전 교리',desc:'화학전 부대를 편성할 수 있게 합니다. 공격력은 매우 높지만 방어력이 낮습니다.',unlockBattalion:'gas_troops',cost:{knowledge:120,steel:20}},
+ {id:'fieldHospitals',name:'야전병원 체계',desc:'후방에서 대기 중인 아군 사단의 회복 속도를 +4%p/턴 늘립니다.',cost:{knowledge:70}},
+ {id:'combinedArms',name:'제병협동 교리',desc:'주력 대대와 보조 대대를 모두 보유한 사단의 공격력·방어력을 +8% 늘립니다.',cost:{knowledge:140,steel:20}},
+ {id:'shockPioneers',name:'돌격공병 전술',desc:'참호 소탕에 특화된 화염방사병 부대를 편성할 수 있게 합니다.',unlockBattalion:'flame_troops',cost:{knowledge:160,steel:30}},
+];
+
+/* ======================= INITIAL RELATIONS (1905) ======================= */
+const INIT_RELATIONS = [
+ ['GER','AH',85],['GER','ITA',25],['GER','OTT',15],['GER','FRA',-55],['GER','UK',-20],['GER','RUS',-25],
+ ['AH','SER',-40],['AH','RUS',-20],['AH','ITA',-15],['AH','OTT',10],
+ ['FRA','UK',55],['FRA','RUS',75],['FRA','SER',20],['FRA','ITA',10],['FRA','OTT',-5],
+ ['UK','RUS',5],['UK','SER',10],['UK','ITA',15],['UK','OTT',10],
+ ['RUS','SER',60],['RUS','OTT',-45],['RUS','ITA',5],
+ ['ITA','OTT',0],['SER','OTT',-20],['SER','ITA',0],
+];
+
+/* ======================= SCRIPTED HISTORICAL EVENTS ======================= */
+const SCRIPTED_EVENTS = [
+ { turn:turnFor(1905,3), title:'제1차 모로코 위기', apply(){ addRel('GER','FRA',-15); addRel('GER','UK',-10);
+   addLog('🌍 제1차 모로코 위기: 독일이 모로코에서 프랑스의 영향력에 도전하며 국제 긴장이 고조되었습니다.','divergence'); } },
+ { turn:turnFor(1907,8), title:'영-러 협상 체결', apply(){ addRel('UK','RUS',20);
+   addLog('🤝 영국과 러시아가 협상을 체결했습니다. 삼국협상(영-프-러)의 틀이 완성되어 갑니다.','divergence'); } },
+ { turn:turnFor(1908,10), title:'보스니아 병합 위기', apply(){ addRel('AH','SER',-20); addRel('AH','RUS',-15);
+   addLog('🔥 오스트리아-헝가리가 보스니아-헤르체고비나를 병합했습니다. 세르비아와 러시아가 강하게 반발합니다.','divergence'); } },
+ { turn:turnFor(1911,7), title:'아가디르 위기', apply(){ addRel('GER','FRA',-15); addRel('GER','UK',-15);
+   addLog('🌍 아가디르 위기: 독일 포함 판터호가 모로코에 파견되며 또 한 번 유럽이 전쟁 직전까지 갔습니다.','divergence'); } },
+ { turn:turnFor(1912,10), title:'제1차 발칸전쟁', apply(){ state.baseline.SER+=15; state.baseline.OTT=Math.max(15,state.baseline.OTT-15);
+   addLog('⚔ 제1차 발칸전쟁 발발: 발칸동맹이 오스만 제국을 상대로 승리하며 세르비아가 크게 성장했습니다.','divergence'); } },
+ { turn:turnFor(1913,7), title:'제2차 발칸전쟁', apply(){ addRel('AH','SER',-10); state.baseline.SER+=5;
+   addLog('⚔ 제2차 발칸전쟁: 세르비아의 영토가 더욱 확장되며 오스트리아-헝가리의 경계심이 커집니다.','divergence'); } },
+ { turn:turnFor(1914,6), title:'사라예보 사건', apply(){ setRel('AH','SER',-95); state.crisisActive=true; state.crisisDeadline=state.turn+2;
+   addLog('🔥🔥 사라예보에서 오스트리아 황태자 프란츠 페르디난트 대공이 암살되었습니다. 유럽 전역에 전운이 감돕니다. 앞으로 몇 턴 안에 외교로 위기를 진정시키지 못하면 전쟁이 시작됩니다.','divergence'); } },
+ { turn:turnFor(1915,1), title:'약소국들의 저울질', apply(){
+   ['BUL','ROM','GRE','POR','MON'].forEach(n=>state.inactiveMinors.delete(n));
+   addLog('🌍 불가리아, 루마니아, 그리스, 포르투갈, 몬테네그로가 각자의 이해관계에 따라 외교 무대에 본격적으로 등장했습니다. 이제 이들과도 서신을 주고받고, 동맹 의무의 사슬에 끌어들일 수 있습니다.','divergence'); } },
+];
+
+/* ======================= STATE ======================= */
+let state = null;
+const AP_GAIN = 3;   // diplomatic action points earned per turn
+const AP_CAP = 12;   // max AP that can be banked (roughly 4 turns' worth)
+
+const DIFFICULTY_MUL = { easy:0.85, normal:1.0, hard:1.25 };
+function freshState(playerNation, difficulty){
+  const relations = {};
+  INIT_RELATIONS.forEach(([a,b,v])=>{ relations[relKey(a,b)] = v; });
+  NATION_IDS.forEach(a=>NATION_IDS.forEach(b=>{ if(a!==b && relations[relKey(a,b)]===undefined) relations[relKey(a,b)]=0; }));
+  const blocOf = {}; NATION_IDS.forEach(n=>blocOf[n]=NATIONS[n].bloc);
+  const baseline = {}; NATION_IDS.forEach(n=>baseline[n]=NATIONS[n].baseline);
+  const manpower = {}; NATION_IDS.forEach(n=>manpower[n]=300);
+  const industryPoints = {}; NATION_IDS.forEach(n=>industryPoints[n]=50);
+  const industry = {}; NATION_IDS.forEach(n=>industry[n]={factory:1,shipyard:1,rail:1});
+  const frontProgress = {}; Object.keys(FRONTS).forEach(f=>frontProgress[f]=0);
+  const frontFirstBattle = {}; Object.keys(FRONTS).forEach(f=>frontFirstBattle[f]=true);
+  // node-graph city map: each front's chain is now a series of individually-owned cities with their
+  // own HP pool. Capturing a city means grinding its HP to 0, not just sliding an abstract progress bar —
+  // and because a corps can target ANY reachable city (not only the adjacent one), multiple corps can
+  // fight at multiple points along the same front simultaneously.
+  const cityOwner = {}, cityHP = {};
+  Object.keys(FRONTS).forEach(fid=>{
+    const chain = FRONTS[fid].chain;
+    const n = chain.length;
+    const s1Count = Math.round(n/2);
+    cityOwner[fid] = chain.map((_,idx)=> idx<s1Count ? 1 : 2);
+    cityHP[fid] = chain.map((_,idx)=>{
+      const isAnchor = idx===0||idx===n-1;
+      const isFort = (FORTRESSES[fid]||[]).includes(idx);
+      const max = isFort?220:(isAnchor?170:100);
+      return {cur:max, max};
+    });
+  });
+  const warWeariness = {}; NATION_IDS.forEach(n=>warWeariness[n]=0);
+  const ships = [];
+  // small starting fleets for flavor
+  const starterFleets = { GER:['destroyer','destroyer','cruiser'], UK:['destroyer','destroyer','destroyer','cruiser'],
+    FRA:['destroyer','cruiser'], RUS:['destroyer'], AH:['destroyer'], ITA:['destroyer'], OTT:['destroyer'], SER:[] };
+  let shipSeq=1;
+  NATION_IDS.forEach(n=>{
+    const zones = Object.keys(SEA_ZONES).filter(z=>SEA_ZONES[z].nations.includes(n));
+    (starterFleets[n]||[]).forEach((t,i)=>{ if(zones.length) ships.push({id:shipSeq++,nation:n,type:t,zone:zones[0],admiralId:null,squadron:Math.floor(i/SQUADRON_SIZE)+1}); });
+  });
+  return {
+    turn:1, year:1905, month:1,
+    playerNation,
+    difficulty: difficulty||'normal',
+    relations, blocOf, baseline, manpower, industryPoints, industry, ships, shipSeq,
+    wars: new Set(),
+    pacts: {},
+    ap: 3, apMax:AP_CAP,
+    divisions: [],
+    corps: [], corpsIdSeq: 1,
+    frontProgress, frontFirstBattle, cityOwner, cityHP, warWeariness,
+    log: [{turn:1,text:`🕊 1905년 1월. ${NATIONS[playerNation].name}의 참모본부에 부임했습니다. 유럽은 평화롭지만, 동맹의 균열과 발칸의 긴장이 이미 꿈틀대고 있습니다. 외교와 산업, 군비 증강에 집중하세요.`,type:'divergence'}],
+    divIdSeq: 1,
+    collapsed: {},
+    mail: { inbox:[], outbox:[] },
+    crisisActive:false, crisisDeadline:null,
+    navalControl: {},
+    knowledge: 20, steel: 0, oil: 0,
+    research: { prod:{industryTech:0,steelworks:0,oilfields:0,academy:0,logistics:0,munitions:0,fortification:0,intelligence:0}, done:new Set() },
+    genBoost: {},
+    battleReports: [],
+    inactiveMinors: new Set(['BUL','ROM','GRE','POR','MON']),
+  };
+}
+
+function relKey(a,b){ return [a,b].sort().join('|'); }
+function getRel(a,b){ if(a===b) return 100; return state.relations[relKey(a,b)]||0; }
+function setRel(a,b,v){ state.relations[relKey(a,b)] = Math.max(-100,Math.min(100,v)); }
+function addRel(a,b,d){ setRel(a,b, getRel(a,b)+d); }
+function isAtWar(a,b){ return state.wars.has(relKey(a,b)); }
+function nm(id){ return NATIONS[id].name; }
+function declareWar(a,b){ if(a===b || isAtWar(a,b)) return; state.wars.add(relKey(a,b)); setRel(a,b,-100); }
+function makePeace(a,b){ state.wars.delete(relKey(a,b)); setRel(a,b,-10); }
+function nationAtWarAtAll(n){ for(const wk of state.wars){ const [x,y]=wk.split('|'); if(x===n||y===n) return true; } return false; }
+function dateStr(turn){ const d=turnToDate(turn); return `${d.year}년 ${d.month}월`; }
+
+/* ======================= SETUP SCREEN ======================= */
+function renderSetup(){
+  const grid = document.getElementById('nationGrid');
+  grid.innerHTML = NATION_IDS.filter(id=>NATIONS[id].playable).map(id=>{
+    const n = NATIONS[id];
+    const blocClass = n.bloc==='CP'?'bloc-CP':(n.bloc==='EN'?'bloc-EN':'bloc-none');
+    const blocLabel = n.bloc==='CP'?'동맹국':(n.bloc==='EN'?'협상국':'중립');
+    return `<div class="nation-card">
+      <span class="bloc-tag ${blocClass}">${blocLabel}</span>
+      <h3>${n.name}</h3>
+      <p>${n.desc}</p>
+      <button onclick="startGame('${id}')">이 나라로 시작</button>
+    </div>`;
+  }).join('');
+}
+
+function startGame(nationId){
+  const diffSel = document.getElementById('difficultySelect');
+  state = freshState(nationId, diffSel?diffSel.value:'normal');
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+  setActiveTab('overview');
+  renderAll();
+}
+
+/* ======================= TAB CONTROL ======================= */
+let activeTab = 'overview';
+let mailSubTab = 'inbox';
+function setActiveTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  renderContent();
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>setActiveTab(b.dataset.tab)));
+document.getElementById('endTurnBtn').addEventListener('click', endTurn);
+document.getElementById('skip5Btn').addEventListener('click', ()=>multiEndTurn(5));
+
+/* ======================= RENDER: TOPBAR ======================= */
+function renderTopbar(){
+  document.getElementById('tbNation').textContent = '⚔ ' + nm(state.playerNation);
+  document.getElementById('tbDate').textContent = `${dateStr(state.turn)} (턴 ${state.turn})`;
+  document.getElementById('tbManpower').textContent = Math.round(state.manpower[state.playerNation]);
+  document.getElementById('tbIndustry').textContent = Math.round(state.industryPoints[state.playerNation]);
+  document.getElementById('tbKnowledge').textContent = Math.round(state.knowledge);
+  document.getElementById('tbSteel').textContent = Math.round(state.steel);
+  document.getElementById('tbOil').textContent = Math.round(state.oil);
+  document.getElementById('tbAP').textContent = `${state.ap} / ${AP_CAP}`;
+}
+
+/* ======================= RENDER: CONTENT ROUTER ======================= */
+function renderContent(){
+  const el = document.getElementById('content');
+  if(activeTab==='overview') el.innerHTML = viewOverview();
+  else if(activeTab==='mail') el.innerHTML = viewMail();
+  else if(activeTab==='military') el.innerHTML = viewMilitary();
+  else if(activeTab==='map') el.innerHTML = viewMap();
+  else if(activeTab==='research') el.innerHTML = viewResearch();
+  else if(activeTab==='navy') el.innerHTML = viewNavy();
+  else if(activeTab==='log') el.innerHTML = viewLog();
+}
+function renderAll(){ renderTopbar(); renderContent(); }
+
+/* ======================= OVERVIEW ======================= */
+function viewOverview(){
+  const p = state.playerNation;
+  let html = `<div class="panel"><h2>국가 현황 — ${nm(p)}</h2>
+   <div class="resource-row">
+     <div class="resource-box">병력 기반력<b>${Math.round(state.baseline[p])}</b></div>
+     <div class="resource-box">보충 병력<b>${Math.round(state.manpower[p])}</b></div>
+     <div class="resource-box">산업력<b>${Math.round(state.industryPoints[p])}</b></div>
+     <div class="resource-box">보유 사단<b>${state.divisions.filter(d=>d.nation===p).length}</b></div>
+     <div class="resource-box">보유 함선<b>${state.ships.filter(s=>s.nation===p).length}</b></div>
+     <div class="resource-box">교전 전선 수<b>${activeFrontsForNation(p).length}</b></div>
+     <div class="resource-box">진영<b>${state.blocOf[p]==='CP'?'동맹국':(state.blocOf[p]==='EN'?'협상국':'중립')}</b></div>
+     <div class="resource-box">국내 불안도<b style="${(state.warWeariness[p]||0)>=70?'color:var(--danger)':''}">${Math.round(state.warWeariness[p]||0)}/100</b></div>
+   </div>
+   ${(state.warWeariness[p]||0)>=70 ? `<p style="color:var(--danger);font-size:0.85em;">⚠ 전쟁 피로가 위험 수준입니다. 100에 도달하면 반정부 봉기로 병력과 국력이 급감합니다 — 강화를 서두르거나 승리로 전쟁을 끝내야 합니다.</p>` : ''}
+   ${state.crisisActive ? `<p style="color:var(--danger);font-size:0.85em;">🔥 사라예보 위기가 진행 중입니다. 외교로 진정시키지 않으면 곧 전쟁이 시작됩니다.</p>` : ''}
+   <p style="color:var(--muted);font-size:0.85em;line-height:1.6;">외교 서신 탭에서 다른 열강과 편지를 주고받고, 연구 탭에서 국력을 키우고, 군사 편제 탭에서 주력 사단을 편성한 뒤, 전선 지도 탭에서 실제 전투에 투입하세요. 예비군은 전선이 활성화되면 AI가 자동으로 동원해 배치합니다.</p>
+  </div>`;
+  const reserves = reserveDivisionsFor(p);
+  if(reserves.length){
+    html += `<div class="panel"><h2>예비군 현황 (AI 자동 동원)</h2>` + reserves.map(r=>
+      `<div class="reserve-card">📍 <b>${r.front}</b> — 예비군 전력 약 ${r.power} (참모본부가 자동으로 편성·배치)</div>`
+    ).join('') + `</div>`;
+  }
+  html += `<div class="panel"><h2>전선 요약</h2>`;
+  let any=false;
+  Object.keys(FRONTS).forEach(fid=>{
+    if(!frontInvolvesNation(fid,p) && !isFrontActive(fid)) return;
+    any=true;
+    html += frontGaugeHtml(fid);
+  });
+  if(!any) html += `<p style="color:var(--muted);font-size:0.85em">아직 활성화된 전선이 없습니다. 평시입니다 — 산업과 외교에 집중하세요.</p>`;
+  html += `</div>`;
+  return html;
+}
+
+function frontInvolvesNation(fid,n){ const f=FRONTS[fid]; return f.side1.includes(n)||f.side2.includes(n); }
+
+function frontGaugeHtml(fid){
+  const f = FRONTS[fid];
+  const prog = state.frontProgress[fid];
+  const active = isFrontActive(fid);
+  const pct = (100-prog)/2; // side1 share of the chain (see map logic)
+  const color1='var(--cp)', color2='var(--en)';
+  return `<div style="margin-bottom:14px;">
+    <div class="front-labels"><span>${f.side1.map(nm).join(', ')}</span><b style="color:var(--text)">${f.name} ${active?'<span class="badge" style="background:var(--danger)">교전중</span>':'<span class="badge" style="background:#444">비활성</span>'}</b><span>${f.side2.map(nm).join(', ')}</span></div>
+    <div class="front-gauge-wrap">
+      <div class="front-gauge-fill" style="left:0;width:${pct}%;background:${color1};opacity:.55"></div>
+      <div class="front-gauge-fill" style="left:${pct}%;width:${100-pct}%;background:${color2};opacity:.55"></div>
+      <div class="front-gauge-mid"></div>
+    </div>
+  </div>`;
+}
+
+function isFrontActive(fid){
+  const f = FRONTS[fid];
+  for(const a of f.side1) for(const b of f.side2) if(isAtWar(a,b)) return true;
+  return false;
+}
+function activeFrontsForNation(n){
+  return Object.keys(FRONTS).filter(fid=>frontInvolvesNation(fid,n) && isFrontActive(fid));
+}
+// purely illustrative: represents the mass of the army that the AI/government manages in the
+// background (already folded into state.baseline's contribution to combat) so the player can
+// see that their hand-picked main divisions aren't the whole story.
+function reserveDivisionsFor(n){
+  return activeFrontsForNation(n).map(fid=>({
+    front: FRONTS[fid].name, frontId: fid,
+    power: Math.round(state.baseline[n]/countActiveFrontsForNation(n)),
+  }));
+}
+/* ======================= NODE-GRAPH CITY MAP (corps-level combat substrate) =======================
+   Every front's chain is a series of individually-owned, individually-HP'd cities. side1's forces push
+   in increasing index order, side2's in decreasing order. The "frontier" is the single contested city
+   next in line for each side; corps/divisions can also strike DEEPER than the frontier (a flanking
+   attack) if their general's mobility allows it, and capturing a deep city stampedes any cut-off enemy
+   cities between the old frontier and the new capture (an explicit, literal Tannenberg-style encirclement). */
+function currentFrontierIdx(fid){ // first city (from side1's rear) not held by side1
+  const owner = state.cityOwner[fid];
+  let i=0; while(i<owner.length && owner[i]===1) i++;
+  return clamp(i,0,owner.length-1);
+}
+function frontOwnerSplitIndex(fid){ return currentFrontierIdx(fid); } // kept for existing call sites (fortress dampening etc.)
+function lastFrontierIdxFromEnd(fid){ // first city (from side2's rear) not held by side2
+  const owner = state.cityOwner[fid];
+  let i=owner.length-1; while(i>=0 && owner[i]===2) i--;
+  return clamp(i,0,owner.length-1);
+}
+function provinceOwnerBloc(fid,idx){
+  const f = FRONTS[fid];
+  const owner = state.cityOwner[fid][idx];
+  const side = owner===1 ? f.side1 : f.side2;
+  return state.blocOf[side[0]] || 'none';
+}
+function recomputeFrontProgress(fid){
+  const owner = state.cityOwner[fid];
+  const n = owner.length;
+  const s1 = owner.filter(o=>o===1).length;
+  state.frontProgress[fid] = clamp(Math.round(100 - 200*(s1/n)), -100, 100);
+}
+// mobility (general spd) → how many cities BEYOND the current frontier a corps/division can strike at,
+// enabling flanking deep-strikes instead of only ever pushing the single adjacent tile.
+function reachFromSpd(spd){ return Math.floor((spd||5)/3); }
+function reachableIndices(fid, side, spd){
+  const n = FRONTS[fid].chain.length;
+  const reach = reachFromSpd(spd);
+  const out = [];
+  if(side===1){ const f = currentFrontierIdx(fid); for(let i=f;i<=Math.min(n-1,f+reach);i++) if(state.cityOwner[fid][i]!==1) out.push(i); }
+  else { const f = lastFrontierIdxFromEnd(fid); for(let i=Math.max(0,f-reach);i<=f;i++) if(state.cityOwner[fid][i]!==2) out.push(i); }
+  return out;
+}
+function captureNode(fid, idx, newOwnerSide){
+  const owner = state.cityOwner[fid], hp = state.cityHP[fid], f = FRONTS[fid];
+  owner[idx] = newOwnerSide;
+  hp[idx].cur = hp[idx].max;
+  const label = f.chain[idx];
+  const isFort = (FORTRESSES[fid]||[]).includes(idx);
+  addLog(`🚩 ${label}${isFort?' 요새':''}이(가) ${(newOwnerSide===1?f.side1:f.side2).map(nm).join('/')} 측으로 넘어갔습니다.`,'battle');
+  encirclementCheck(fid, newOwnerSide);
+  recomputeFrontProgress(fid);
+}
+// if a flank capture leaves enemy-held cities stranded between the contiguous frontier and the new
+// capture, those stranded cities are cut off from supply and fall automatically (literal encirclement).
+function encirclementCheck(fid, side){
+  const owner = state.cityOwner[fid];
+  const n = owner.length;
+  const hp = state.cityHP[fid];
+  if(side===1){
+    let i=0; while(i<n && owner[i]===1) i++;
+    for(let j=i+1;j<n;j++){
+      if(owner[j]===1){
+        let flipped=false;
+        for(let k=i;k<j;k++){ if(owner[k]!==1){ owner[k]=1; hp[k].cur=hp[k].max; flipped=true; } }
+        if(flipped) addLog(`🌟 ${FRONTS[fid].name}: 고립된 거점들이 포위망 붕괴로 함락되었습니다 — 탄넨베르크식 섬멸전!`,'battle');
+        break;
+      }
+    }
+  } else {
+    let i=n-1; while(i>=0 && owner[i]===2) i--;
+    for(let j=i-1;j>=0;j--){
+      if(owner[j]===2){
+        let flipped=false;
+        for(let k=j+1;k<=i;k++){ if(owner[k]!==2){ owner[k]=2; hp[k].cur=hp[k].max; flipped=true; } }
+        if(flipped) addLog(`🌟 ${FRONTS[fid].name}: 고립된 거점들이 포위망 붕괴로 함락되었습니다 — 탄넨베르크식 섬멸전!`,'battle');
+        break;
+      }
+    }
+  }
+}
+// background AI-vs-AI (or AI-vs-neither-is-player) pressure: grinds the single contested frontier city
+// instead of an abstract float. Positive shift = side1 pressing forward, negative = side2.
+function applyFrontierPressure(fid, shift){
+  const owner = state.cityOwner[fid], hp = state.cityHP[fid];
+  const dmgScale = 5;
+  if(shift>0){
+    const idx = currentFrontierIdx(fid);
+    if(owner[idx]===2){
+      hp[idx].cur = Math.max(0, hp[idx].cur - shift*dmgScale*(100/hp[idx].max));
+      if(hp[idx].cur<=0) captureNode(fid, idx, 1);
+    }
+  } else if(shift<0){
+    const idx = lastFrontierIdxFromEnd(fid);
+    if(owner[idx]===1){
+      hp[idx].cur = Math.max(0, hp[idx].cur - (-shift)*dmgScale*(100/hp[idx].max));
+      if(hp[idx].cur<=0) captureNode(fid, idx, 2);
+    }
+  }
+  recomputeFrontProgress(fid);
+}
+// player-driven node attack (solo division or corps): idx is the target city, atkPower is the pooled
+// attack value, attackerSide is 1 if the attacker is on f.side1.
+function attemptNodeAttack(fid, idx, atkPower, attackerSide, isFlank){
+  const owner = state.cityOwner[fid], hp = state.cityHP[fid], f = FRONTS[fid];
+  if(owner[idx]===attackerSide) return {already:true};
+  const enemySide = attackerSide===1?f.side2:f.side1;
+  const enemyPow = estimateSidePower(enemySide,fid);
+  const isFort = (FORTRESSES[fid]||[]).includes(idx);
+  const fortMul = isFort?1.55:1;
+  let defense = (enemyPow/(enemySide.length||1)+8) * fortMul * (0.5+0.5*hp[idx].cur/hp[idx].max);
+  if(enemySide.includes(state.playerNation)) defense *= 1+0.04*(state.research.prod.fortification||0);
+  const ratio = atkPower/Math.max(1,defense);
+  let dmg = clamp(ratio*38,4,95) * (0.75+Math.random()*0.5);
+  if(isFlank) dmg *= 1.1; // undefended-rear cities are softer to a successful flank strike
+  hp[idx].cur = Math.max(0, hp[idx].cur-dmg);
+  let captured=false;
+  if(hp[idx].cur<=0){ captureNode(fid, idx, attackerSide); captured=true; }
+  return {ratio, dmg:Math.round(dmg), captured, hpLeft:Math.round(hp[idx].cur), hpMax:hp[idx].max};
+}
+
+/* ======================= MAIL / DIPLOMACY ======================= */
+const MSG_TEMPLATES = {
+  improve:{ label:'우호 서한', subject:'우호 증진을 위한 서한', bodyOk:'귀국과의 관계를 돈독히 하고자 이 서신을 보냅니다. 양국의 평화와 번영을 기원합니다.' },
+  alliance:{ label:'동맹 제안', subject:'동맹 결성 제안', bodyOk:'귀국과 손을 잡고자 합니다. 우리와 함께해 주시겠습니까?' },
+  pact:{ label:'불가침 조약', subject:'불가침 조약 체결 제안', bodyOk:'서로의 국경을 존중하며 당분간 무력 충돌을 피할 것을 제안합니다.' },
+  ultimatum:{ label:'최후통첩', subject:'최후통첩', bodyOk:'귀국의 태도 변화를 강력히 요구합니다. 응하지 않을 경우 심각한 결과를 감수해야 할 것입니다.' },
+  war:{ label:'선전포고', subject:'선전포고문', bodyOk:'귀국에 정식으로 전쟁을 선포합니다.' },
+  peace:{ label:'강화 제안', subject:'강화 협상 제안', bodyOk:'더 이상의 유혈을 막고자 강화를 제안합니다.' },
+  incite:{ label:'전쟁 선동(이간계)', subject:'은밀한 제안', bodyOk:null },
+};
+const TONE_MOD = {
+  polite:{ label:'공손하게', chanceAdd:0.10, magMul:0.7 },
+  normal:{ label:'표준적으로', chanceAdd:0, magMul:1 },
+  firm:{ label:'강경하게', chanceAdd:-0.15, magMul:1.4 },
+};
+
+function viewMail(){
+  const p = state.playerNation;
+  // every nation can be corresponded with from turn 1 — even the 1915 minor entrants — so relations can
+  // be built up in advance. isNationActive() still separately gates when they can actually join the war.
+  const targets = NATION_IDS.filter(n=>n!==p);
+  const composer = `<div class="composer">
+    <div style="margin-bottom:6px;font-size:0.85em;color:var(--muted)">남은 외교력: ${state.ap} / ${AP_CAP} (매 턴 +${AP_GAIN}, 최대치까지 비축해서 한 번에 몰아 쓸 수 있습니다)</div>
+    <select id="msgTarget">${targets.map(n=>`<option value="${n}">수신국: ${nm(n)}${!isNationActive(n)?' (1915년 전 참전 예정)':''} (${getRel(p,n)>0?'+':''}${getRel(p,n)})</option>`).join('')}</select>
+    <select id="msgAction">${Object.keys(MSG_TEMPLATES).map(k=>`<option value="${k}">${MSG_TEMPLATES[k].label}</option>`).join('')}</select>
+    <select id="msgTone">${Object.keys(TONE_MOD).map(k=>`<option value="${k}" ${k==='normal'?'selected':''}>${TONE_MOD[k].label}</option>`).join('')}</select>
+    <select id="msgTarget2">${targets.map(n=>`<option value="${n}">선동 대상(이간계 전용): ${nm(n)}</option>`).join('')}</select>
+    <button class="send" ${state.ap<1?'disabled':''} onclick="sendMessage()">서신 발송</button>
+    <div style="font-size:0.74em;color:var(--muted);margin-top:4px;">"전쟁 선동" 서신은 수신국이 별도로 고른 '선동 대상'국에 먼저 전쟁을 걸도록 부추깁니다. 나머지 서신은 선동 대상을 무시합니다. 1915년 이전의 소국은 서신은 주고받을 수 있지만, 실제 참전·진영 결정은 1915년부터 이뤄집니다.</div>
+  </div>`;
+  const allyHtml = allySupportHtml(p);
+  const tabs = `<div class="mail-tabs">
+    <button class="${mailSubTab==='inbox'?'active':''}" onclick="setMailSub('inbox')">받은 편지함 (${state.mail.inbox.length})</button>
+    <button class="${mailSubTab==='outbox'?'active':''}" onclick="setMailSub('outbox')">보낸 편지함 (${state.mail.outbox.length})</button>
+  </div>`;
+  const list = state.mail[mailSubTab].slice().reverse().map(m=>`<div class="letter ${m.ok===false?'reject':''}">
+    <div class="meta">턴 ${m.turn} · ${dateStr(m.turn)} · ${mailSubTab==='inbox'?('발신: '+nm(m.from)):('수신: '+nm(m.to))}</div>
+    <div class="subject">${m.subject}</div>
+    <div>${m.body}</div>
+  </div>`).join('') || `<p style="color:var(--muted);font-size:0.85em">편지가 없습니다.</p>`;
+  return `<div class="panel"><h2>외교 서신 작성</h2>${composer}</div>${allyHtml}<div class="panel"><h2>편지함</h2>${tabs}${list}</div>`;
+}
+// wartime ally roster: shows each ally's economic state (industry/manpower/baseline) and lets the
+// player transfer some of their own industrial power or knowledge to help a struggling ally hold on.
+function allySupportHtml(p){
+  const allies = NATION_IDS.filter(n=>n!==p && isNationActive(n) && state.blocOf[n] && state.blocOf[n]===state.blocOf[p] && nationAtWarAtAll(p));
+  if(!allies.length) return '';
+  const cards = allies.map(n=>{
+    return `<div class="front-card"><h4>${nm(n)} <span style="font-size:0.7em;color:var(--muted)">${isAtWar(n,p)?'':'우호국'}</span></h4>
+      <div style="font-size:0.78em;color:var(--muted);">병력 기반력 ${Math.round(state.baseline[n])} · 산업력 ${Math.round(state.industryPoints[n])} · 보충 병력 ${Math.round(state.manpower[n])}</div>
+      <div style="margin-top:6px;">
+        <button class="mini-btn" ${state.ap<1||state.industryPoints[p]<20?'disabled':''} onclick="supportAlly('${n}','industry')" title="산업력 20 지원 (외교력 1 소모)">🏭 산업력 지원 (20)</button>
+        <button class="mini-btn" ${state.ap<1||state.knowledge<15?'disabled':''} onclick="supportAlly('${n}','knowledge')" title="지식 15를 소모해 동맹의 병력 기반력을 강화 (외교력 1 소모)">🎓 기술 지원 (지식 15)</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="panel"><h2>동맹 지원 — 산업력 ${Math.round(state.industryPoints[p])} · 지식 ${Math.round(state.knowledge)}</h2>${cards}</div>`;
+}
+function supportAlly(target, resource){
+  const p = state.playerNation;
+  if(state.ap<1){ toast('외교력이 부족합니다.'); return; }
+  if(!state.blocOf[target] || state.blocOf[target]!==state.blocOf[p] || target===p) return;
+  if(resource==='industry'){
+    if(state.industryPoints[p]<20){ toast('지원할 산업력이 부족합니다.'); return; }
+    state.industryPoints[p]-=20;
+    state.industryPoints[target] = Math.min(999, state.industryPoints[target]+20);
+    addLog(`🤝 ${nm(p)}이(가) ${nm(target)}에 산업력 20을 지원했습니다.`,'divergence');
+  } else {
+    if(state.knowledge<15){ toast('지원할 지식이 부족합니다.'); return; }
+    state.knowledge-=15;
+    state.baseline[target] = Math.min(400, state.baseline[target]+8);
+    addLog(`🤝 ${nm(p)}이(가) ${nm(target)}에 군사 기술을 지원해 병력 기반력이 강화되었습니다 (+8).`,'divergence');
+  }
+  addRel(p,target,5);
+  state.ap--;
+  toast('동맹 지원 완료');
+  renderAll();
+}
+function setMailSub(t){ mailSubTab=t; renderContent(); }
+
+function sendMessage(){
+  const p = state.playerNation;
+  if(state.ap<1) return;
+  const target = document.getElementById('msgTarget').value;
+  const action = document.getElementById('msgAction').value;
+  const tone = document.getElementById('msgTone').value;
+  const target2 = document.getElementById('msgTarget2').value;
+  const tpl = MSG_TEMPLATES[action];
+  const toneMod = TONE_MOD[tone];
+
+  if(action==='incite' && (target2===target || target2===p)){
+    toast('선동 대상은 수신국과 우리나라를 제외한 다른 나라여야 합니다.');
+    return;
+  }
+
+  let replySubject='', replyBody='', ok=true;
+  if(action==='incite'){
+    const inciteBody = `귀국이 ${nm(target2)}와(과) 전쟁을 벌인다면 우리가 뒤에서 지원하겠습니다.`;
+    state.mail.outbox.push({turn:state.turn, to:target, subject:tpl.subject, body:inciteBody});
+    if(isAtWar(target,target2)){
+      replySubject='이미 전쟁 중'; replyBody=`${nm(target)}은(는) 이미 ${nm(target2)}와(과) 전쟁 중입니다.`; ok=false;
+    } else {
+      let chance = clamp((getRel(p,target)+30)/130,0.05,0.8) + toneMod.chanceAdd + Math.max(0,-getRel(target,target2))/200 + 0.03*(state.research.prod.intelligence||0);
+      if(Math.random()<chance){
+        declareWar(target,target2);
+        addLog(`🕵️ ${nm(p)}의 은밀한 선동으로 ${nm(target)}이(가) ${nm(target2)}에 전쟁을 선포했습니다!`,'war');
+        replySubject='제안 수락'; replyBody=`${nm(target)}이(가) 제안을 받아들여 ${nm(target2)}에 선전포고했습니다.`; ok=true;
+      } else {
+        addRel(p,target,-8);
+        replySubject='제안 거절'; replyBody=`${nm(target)}이(가) 은밀한 제안을 거절하고 불쾌해했습니다. (관계 -8)`; ok=false;
+      }
+    }
+    state.mail.inbox.push({turn:state.turn, from:target, subject:replySubject, body:replyBody, ok});
+    state.ap--;
+    toast(replyBody);
+    renderAll();
+    return;
+  }
+  state.mail.outbox.push({turn:state.turn, to:target, subject:tpl.subject, body:tpl.bodyOk});
+
+  if(action==='improve'){
+    const d = Math.round((8+Math.floor(Math.random()*8))*toneMod.magMul);
+    addRel(p,target,d);
+    replySubject='우호에 대한 답신'; replyBody=`${nm(target)}이(가) 우호적인 서신에 화답했습니다. (관계 +${d})`;
+  } else if(action==='alliance'){
+    const alreadyAllied = state.blocOf[target]===state.blocOf[p];
+    if(alreadyAllied){ replySubject='회신'; replyBody='이미 우호적인 진영입니다.'; ok=true; }
+    else {
+      const rel = getRel(p,target);
+      let chance = clamp((rel+40)/110,0.05,0.9) + toneMod.chanceAdd;
+      chance *= state.blocOf[target] ? 0.5 : 1; // harder to flip an already-committed nation
+      if(Math.random()<chance){
+        const oldBloc = state.blocOf[target];
+        state.blocOf[target] = state.blocOf[p];
+        addLog(`⚡ 역사적 분기점: ${nm(target)}이(가) ${oldBloc?'진영을 바꾸어 ':''}${state.blocOf[p]==='CP'?'동맹국':'협상국'} 편에 섰습니다!`,'divergence');
+        replySubject='동맹 수락'; replyBody=`${nm(target)}이(가) 동맹 제안을 받아들였습니다!`; ok=true;
+      } else { addRel(p,target,-5); replySubject='동맹 거절'; replyBody=`${nm(target)}이(가) 제안을 정중히 거절했습니다.`; ok=false; }
+    }
+  } else if(action==='pact'){
+    if(getRel(p,target) < -20){ replySubject='조약 거절'; replyBody='관계가 너무 나빠 불가침 조약을 거절당했습니다.'; ok=false; }
+    else { state.pacts[relKey(p,target)] = state.turn+6; replySubject='조약 체결'; replyBody=`${nm(target)}과(와) 불가침 조약을 체결했습니다 (6턴간 유지).`; ok=true; }
+  } else if(action==='ultimatum'){
+    const d = Math.round((15+Math.floor(Math.random()*10))*toneMod.magMul);
+    addRel(p,target,-d);
+    let chance = 0.3*toneMod.magMul + toneMod.chanceAdd;
+    if(getRel(p,target) < -70 && Math.random()<chance){
+      declareWar(p,target);
+      addLog(`💥 ${nm(p)}의 최후통첩이 실패하며 ${nm(target)}와(과) 전쟁이 발발했습니다.`,'war');
+      replySubject='최후통첩 결렬'; replyBody='최후통첩이 전쟁으로 번졌습니다!'; ok=false;
+    } else { replySubject='최후통첩에 대한 반응'; replyBody=`${nm(target)}과(와)의 관계가 악화되었습니다. (${-d})`; ok=false; }
+  } else if(action==='war'){
+    declareWar(p,target);
+    addLog(`💥 ${nm(p)}이(가) ${nm(target)}에 선전포고했습니다.`,'war');
+    replySubject='선전포고 접수'; replyBody=`${nm(target)}에 정식으로 전쟁을 선포했습니다.`; ok=false;
+  } else if(action==='peace'){
+    const prog = Math.abs(frontProgressForPair(p,target));
+    let chance = clamp(0.15+prog/150,0.1,0.7) + toneMod.chanceAdd;
+    if(Math.random()<chance){
+      makePeace(p,target);
+      addLog(`🕊 ${nm(p)}과(와) ${nm(target)} 사이에 강화가 성립되었습니다.`,'peace');
+      replySubject='강화 수락'; replyBody='강화가 성립되었습니다.'; ok=true;
+    } else { addRel(p,target,-3); replySubject='강화 거절'; replyBody=`${nm(target)}이(가) 강화를 거부했습니다.`; ok=false; }
+  }
+  state.mail.inbox.push({turn:state.turn, from:target, subject:replySubject, body:replyBody, ok});
+  state.ap--;
+  toast(replyBody);
+  renderAll();
+}
+function frontProgressForPair(a,b){
+  for(const fid in FRONTS){ const f=FRONTS[fid]; if((f.side1.includes(a)&&f.side2.includes(b))||(f.side1.includes(b)&&f.side2.includes(a))) return state.frontProgress[fid]; }
+  return 0;
+}
+
+/* ======================= MILITARY ======================= */
+function viewMilitary(){
+  const p = state.playerNation;
+  const myGenerals = GENERALS.filter(g=>g.nation===p).slice().sort((a,b)=>a.unlock-b.unlock);
+  const usedGenIds = new Set(state.divisions.filter(d=>d.nation===p).map(d=>d.generalId));
+  let genHtml = myGenerals.map(g=>{
+    const locked = state.turn < g.unlock;
+    const used = usedGenIds.has(g.id);
+    if(locked){
+      const d = turnToDate(g.unlock);
+      return `<div class="gen-card locked"><div><b>${g.name}</b><span class="gen-lock">🔒 ${d.year}년 ${d.month}월에 등장 예정</span></div></div>`;
+    }
+    const b = state.genBoost[g.id];
+    const trainCost = 30+(b?b.times*20:0), trainMp = 40+(b?b.times*20:0);
+    const trainDisabled = (b&&b.times>=5) || state.knowledge<trainCost || state.manpower[p]<trainMp;
+    return `<div class="gen-card ${used?'used':''}">
+      <div><b>${g.name}</b> <span class="grade-badge grade-${g.grade}">${g.grade}급</span>${b&&b.times?`<span style="color:var(--good);font-size:0.72em;"> (연수 ${b.times}회)</span>`:''}<span class="gen-trait">${g.desc}</span></div>
+      <div class="gen-stats"><span>공${genAtk(g)}</span><span>방${genDef(g)}</span><span>기동력${g.spd}</span>
+        <button class="mini-btn" ${trainDisabled?'disabled':''} onclick="trainGeneral('${g.id}')" title="지식 ${trainCost}·병력 ${trainMp} 소모, 공+1/방+1">🎓 연수(${b?b.times:0}/5)</button>
+        ${used?'<span style="color:var(--muted)">배치됨</span>':`<button class="mini-btn" onclick="createDivision('${g.id}')">사단 창설</button>`}</div>
+    </div>`;
+  }).join('');
+
+  const myDivs = state.divisions.filter(d=>d.nation===p);
+  const visibleBattalions = Object.keys(BATTALION_TYPES).filter(bid=>{
+    const bt = BATTALION_TYPES[bid];
+    return !bt.nationOnly || bt.nationOnly===p;
+  });
+  let divHtml = myDivs.map(d=>{
+    const g = GENERALS.find(x=>x.id===d.generalId);
+    const battHtml = d.battalions.map((bid,idx)=>{
+      const bt = BATTALION_TYPES[bid];
+      return `<span class="battalion-chip ${bt.tier==='core'?'chip-core':''}" title="${bt.traitDesc||''}">${bt.tier==='core'?'★':''}${bt.name}<button onclick="removeBattalion(${d.id},${idx})">✕</button></span>`;
+    }).join('') || '<span style="color:var(--muted);font-size:0.78em">편성된 대대 없음</span>';
+    const cCount = coreCount(d), aCount = auxCount(d);
+    const paletteHtml = visibleBattalions.map(bid=>{
+      const bt = BATTALION_TYPES[bid];
+      const researchLocked = bt.requiresResearch && !state.research.done.has(bt.requiresResearch);
+      const dispSteel = Math.round((bt.steelCost||0)*munitionsMul()), dispOil = Math.round((bt.oilCost||0)*munitionsMul());
+      const shortOn = state.manpower[p]<bt.cost || (dispSteel&&state.steel<dispSteel) || (dispOil&&state.oil<dispOil);
+      const typeCapped = d.battalions.filter(x=>x===bid).length>=MAX_PER_BATTALION_TYPE;
+      const tierCapped = bt.tier==='core' ? cCount>=MAX_CORE : aCount>=MAX_AUX;
+      const disabled = shortOn || researchLocked || typeCapped || tierCapped;
+      const costLabel = `${bt.cost}${dispSteel?'+강철'+dispSteel:''}${dispOil?'+원유'+dispOil:''}`;
+      const reason = researchLocked?'연구 탭에서 먼저 해금하세요':(tierCapped?(bt.tier==='core'?'주력 대대는 최대 '+MAX_CORE+'개까지':'보조 대대는 최대 '+MAX_AUX+'개까지'):(typeCapped?'같은 대대는 최대 '+MAX_PER_BATTALION_TYPE+'개까지 편성 가능':bt.traitDesc||''));
+      return `<button ${disabled?'disabled':''} onclick="addBattalion(${d.id},'${bid}')" title="${reason}">${bt.tier==='core'?'★':''}${bt.name}${researchLocked?' 🔒':''} (${costLabel})</button>`;
+    }).join('');
+    const frontName = d.frontId ? FRONTS[d.frontId].name : '후방 대기';
+    const corpsInfo = d.corpsId ? (()=>{ const c=state.corps.find(x=>x.id===d.corpsId); return c?`<span style="font-size:0.72em;color:var(--accent2)">🎖 ${c.name} 소속</span>`:''; })() : '';
+    return `<div class="division-card">
+      <h4>${g.name} 사단 <span style="font-size:0.75em;color:var(--muted)">📍 ${frontName}</span> ${corpsInfo}</h4>
+      <div class="strength-bar-wrap"><div class="strength-bar" style="width:${d.strength}%"></div></div>
+      <div style="font-size:0.75em;color:var(--muted);margin-bottom:6px;">전투력 ${d.strength}% · 주력 ${cCount}/${MAX_CORE} · 보조 ${aCount}/${MAX_AUX} (동일 대대 최대 ${MAX_PER_BATTALION_TYPE}개)</div>
+      ${battHtml}
+      <div class="palette">${paletteHtml}</div>
+      <div style="margin-top:8px;"><button class="mini-btn" onclick="recommendComposition(${d.id})">💡 추천 대대 구성</button> <button class="mini-btn" onclick="disbandDivision(${d.id})">사단 해체</button></div>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:0.85em">아직 창설된 주력 사단이 없습니다. 좌측에서 해금된 지휘관을 선택해 사단을 창설하세요. (전선의 나머지 병력은 예비군으로 AI가 자동 동원합니다 — 개요 탭 참고)</p>';
+
+  return `<div class="grid2">
+    <div class="panel"><h2>지휘관단 (${myGenerals.filter(g=>state.turn>=g.unlock).length}/${myGenerals.length} 해금)</h2><div class="card-list">${genHtml}</div></div>
+    <div class="panel"><h2>주력 사단 편제 — 보충 병력 ${Math.round(state.manpower[p])} · 강철 ${Math.round(state.steel)} · 원유 ${Math.round(state.oil)}</h2>${divHtml}</div>
+  </div>`;
+}
+
+function createDivision(generalId){
+  const p = state.playerNation;
+  const g = GENERALS.find(x=>x.id===generalId);
+  if(!g || state.turn < g.unlock) return;
+  state.divisions.push({id:state.divIdSeq++, nation:p, generalId, battalions:[], strength:100, frontId:null, targetIdx:null, corpsId:null});
+  renderAll();
+}
+function disbandDivision(id){
+  const p = state.playerNation;
+  const d = state.divisions.find(x=>x.id===id);
+  if(!d) return;
+  const refund = d.battalions.reduce((s,bid)=>s+BATTALION_TYPES[bid].cost,0)*0.5;
+  const steelRefund = d.battalions.reduce((s,bid)=>s+(BATTALION_TYPES[bid].steelCost||0),0)*0.5;
+  const oilRefund = d.battalions.reduce((s,bid)=>s+(BATTALION_TYPES[bid].oilCost||0),0)*0.5;
+  state.manpower[p]+=refund;
+  state.steel = Math.min(999, state.steel+steelRefund);
+  state.oil = Math.min(999, state.oil+oilRefund);
+  state.divisions = state.divisions.filter(x=>x.id!==id);
+  removeDivisionFromItsCorps(d);
+  renderAll();
+}
+function removeDivisionFromItsCorps(d){
+  if(!d.corpsId) return;
+  const c = state.corps.find(x=>x.id===d.corpsId);
+  if(!c) return;
+  c.divisionIds = c.divisionIds.filter(did=>did!==d.id);
+  if(c.divisionIds.length<2){
+    c.divisionIds.forEach(did=>{ const md=state.divisions.find(x=>x.id===did); if(md) md.corpsId=null; });
+    state.corps = state.corps.filter(x=>x.id!==c.id);
+  }
+}
+function addBattalion(divId,bid){
+  const p = state.playerNation;
+  const d = state.divisions.find(x=>x.id===divId);
+  const bt = BATTALION_TYPES[bid];
+  if(!d || !bt) return;
+  if(bt.tier==='core' ? coreCount(d)>=MAX_CORE : auxCount(d)>=MAX_AUX) return;
+  if(d.battalions.filter(x=>x===bid).length>=MAX_PER_BATTALION_TYPE) return;
+  if(bt.nationOnly && bt.nationOnly!==p) return;
+  if(bt.requiresResearch && !state.research.done.has(bt.requiresResearch)) return;
+  const steelCost = Math.round((bt.steelCost||0)*munitionsMul());
+  const oilCost = Math.round((bt.oilCost||0)*munitionsMul());
+  if(state.manpower[p]<bt.cost) return;
+  if(steelCost && state.steel<steelCost) return;
+  if(oilCost && state.oil<oilCost) return;
+  state.manpower[p]-=bt.cost;
+  if(steelCost) state.steel-=steelCost;
+  if(oilCost) state.oil-=oilCost;
+  d.battalions.push(bid);
+  renderAll();
+}
+function munitionsMul(){ return Math.max(0.75, 1-0.05*(state.research.prod.munitions||0)); }
+function removeBattalion(divId,idx){
+  const p = state.playerNation;
+  const d = state.divisions.find(x=>x.id===divId);
+  if(!d) return;
+  const bid = d.battalions[idx];
+  state.manpower[p]+=BATTALION_TYPES[bid].cost*0.5;
+  d.battalions.splice(idx,1);
+  renderAll();
+}
+// "추천 대대 구성": clears the division and refills it with a balanced doctrine — best affordable core
+// (주력) battalions up to 3, then a balanced aux (보조) fireteam up to 7 — respecting per-type caps and
+// available resources.
+function recommendComposition(divId){
+  const p = state.playerNation;
+  const d = state.divisions.find(x=>x.id===divId && x.nation===p);
+  if(!d) return;
+  const refundMp = d.battalions.reduce((s,bid)=>s+BATTALION_TYPES[bid].cost,0)*0.5;
+  const refundSteel = d.battalions.reduce((s,bid)=>s+(BATTALION_TYPES[bid].steelCost||0),0)*0.5;
+  const refundOil = d.battalions.reduce((s,bid)=>s+(BATTALION_TYPES[bid].oilCost||0),0)*0.5;
+  let mp = state.manpower[p]+refundMp, steel = state.steel+refundSteel, oil = state.oil+refundOil;
+  d.battalions = [];
+  const available = bid=>{
+    const bt = BATTALION_TYPES[bid];
+    if(bt.nationOnly && bt.nationOnly!==p) return false;
+    if(bt.requiresResearch && !state.research.done.has(bt.requiresResearch)) return false;
+    return true;
+  };
+  // best core battalions first, ranked by (atk+def) value for the manpower/materiel they cost
+  const coreOrder = Object.keys(BATTALION_TYPES).filter(bid=>BATTALION_TYPES[bid].tier==='core' && available(bid))
+    .sort((a,b)=>{ const A=BATTALION_TYPES[a],B=BATTALION_TYPES[b]; return (B.atk+B.def)/B.cost - (A.atk+A.def)/A.cost; });
+  const auxOrder = ['inf_line','mg','art_field','engineer','signal_corps','cav_light','inf_reserve','art_mountain'].filter(available);
+  const typeCount = {};
+  function fill(order, tierMax, tierCountFn){
+    let guard=0;
+    while(tierCountFn(d)<tierMax && guard<200){
+      guard++;
+      let added=false;
+      for(const bid of order){
+        if(tierCountFn(d)>=tierMax) break;
+        const bt = BATTALION_TYPES[bid];
+        typeCount[bid]=typeCount[bid]||0;
+        if(typeCount[bid]>=MAX_PER_BATTALION_TYPE) continue;
+        const sCost = Math.round((bt.steelCost||0)*munitionsMul()), oCost = Math.round((bt.oilCost||0)*munitionsMul());
+        if(mp<bt.cost || (sCost&&steel<sCost) || (oCost&&oil<oCost)) continue;
+        d.battalions.push(bid); typeCount[bid]++;
+        mp -= bt.cost; steel -= sCost; oil -= oCost;
+        added=true;
+      }
+      if(!added) break;
+    }
+  }
+  fill(coreOrder, MAX_CORE, coreCount);
+  fill(auxOrder, MAX_AUX, auxCount);
+  state.manpower[p] = mp; state.steel = steel; state.oil = oil;
+  toast(`추천 대대 구성 적용: 주력 ${coreCount(d)}/${MAX_CORE} · 보조 ${auxCount(d)}/${MAX_AUX}로 재편성했습니다.`);
+  renderAll();
+}
+
+/* ======================= MAP (geographic — real coordinates) ======================= */
+// simple equirectangular-ish projection over the WW1 European/Middle-Eastern theatre
+const GEO_BOUNDS = { lonMin:-9, lonMax:52, latMin:29, latMax:61, w:1200, h:760 };
+function projectGeo(lat,lon){
+  const x = (lon-GEO_BOUNDS.lonMin) * (GEO_BOUNDS.w/(GEO_BOUNDS.lonMax-GEO_BOUNDS.lonMin));
+  const y = (GEO_BOUNDS.latMax-lat) * (GEO_BOUNDS.h/(GEO_BOUNDS.latMax-GEO_BOUNDS.latMin));
+  return {x,y};
+}
+// real approximate lat/lon for every named place in each front's chain (same order as FRONTS[fid].chain)
+const CHAIN_GEO = {
+ western: [ [50.94,6.96],[50.78,6.08],[50.63,5.57],[51.22,4.40],[50.85,4.35],[50.63,3.06],[50.29,2.78],[50.85,2.89],[49.89,2.30],[49.93,2.93],[49.16,5.38],[49.04,3.40],[48.86,2.35] ],
+ eastern: [ [52.52,13.40],[52.41,16.93],[53.12,18.00],[53.49,20.29],[53.80,21.50],[52.23,21.01],[51.77,19.46],[51.25,22.57],[52.10,23.68],[49.84,24.03],[49.78,22.77],[48.29,25.94],[53.90,27.57],[59.93,30.34] ],
+ balkan: [ [47.50,19.04],[43.86,18.41],[44.50,19.20],[44.27,19.89],[44.79,20.45],[44.02,20.91],[43.32,21.90],[42.00,21.43] ],
+ italian: [ [47.27,11.39],[46.07,11.12],[45.94,13.62],[45.90,13.55],[46.24,13.58],[45.65,13.77],[46.06,13.24],[45.44,12.33] ],
+ caucasus: [ [39.93,32.86],[39.75,37.02],[39.90,41.27],[38.49,43.38],[40.60,43.09],[41.72,44.79],[40.41,49.87] ],
+ mesopotamia: [ [36.34,43.13],[34.60,43.68],[34.20,43.87],[33.31,44.36],[32.51,45.82],[31.05,46.25],[30.51,47.78] ],
+};
+const THEATRE_TERRAIN = { western:'평원', eastern:'평원', balkan:'구릉', italian:'산악', caucasus:'산악', mesopotamia:'사막' };
+// chain-index positions of major fortresses: they dampen how fast an attacker can push past them,
+// forcing the same kind of "reduce the fortress first" choice the real 1914 invasion of Belgium/Galicia posed.
+const FORTRESSES = { western:[3], eastern:[10] }; // 안트베르펜 요새, 프셰미실 요새
+const TERRAIN_TINT = { '평원':'#6f8a4a', '구릉':'#a08a4a', '산악':'#8a7a6a', '사막':'#c2a35a' };
+function chainCoords(fid){
+  return CHAIN_GEO[fid].map(([lat,lon])=>projectGeo(lat,lon));
+}
+const BLOC_COLOR = { CP:'#b0655a', EN:'#4a7ea3', none:'#5c5648' };
+// rough national-territory blobs (political backdrop) — centroid lat/lon + projected-px radii
+const NATION_TERRITORY = {
+ GER:{lat:51.2, lon:10.2, rx:115, ry:80},
+ AH: {lat:47.6, lon:17.2, rx:130, ry:90},
+ OTT:{lat:39.2, lon:34.5, rx:190, ry:120},
+ FRA:{lat:46.8, lon:2.3,  rx:120, ry:105},
+ UK: {lat:53.6, lon:-2.6, rx:90,  ry:115},
+ RUS:{lat:57.5, lon:34.0, rx:230, ry:150},
+ ITA:{lat:43.6, lon:12.3, rx:65,  ry:120},
+ SER:{lat:44.2, lon:20.8, rx:55,  ry:55},
+};
+// mountain ranges & rivers for terrain context (lat/lon polylines)
+const MOUNTAIN_RANGES = [
+ {name:'알프스', pts:[[46.8,7.0],[46.6,8.5],[46.3,10.0],[46.0,11.5],[45.8,13.0]]},
+ {name:'카르파티아 산맥', pts:[[49.3,18.5],[48.8,20.5],[48.2,22.5],[47.6,25.0]]},
+ {name:'디나르 알프스', pts:[[45.0,15.5],[44.2,17.5],[43.4,19.0],[42.5,20.5]]},
+ {name:'캅카스 산맥', pts:[[43.2,41.0],[42.5,43.5],[41.8,46.0]]},
+];
+const RIVERS = [
+ {name:'라인강', pts:[[50.9,7.0],[49.9,8.2],[49.0,8.3],[48.5,7.7],[47.6,7.6]]},
+ {name:'다뉴브강', pts:[[48.2,16.4],[47.5,19.0],[45.2,19.8],[44.8,20.45],[43.8,25.9]]},
+ {name:'비스와강', pts:[[54.3,18.6],[53.1,18.9],[52.2,21.0],[50.3,21.0]]},
+ {name:'티그리스-유프라테스', pts:[[36.3,43.1],[34.2,43.9],[33.3,44.36],[32.5,45.8],[30.5,47.78]]},
+];
+const SEA_GEO = { northsea:{lat:55.8,lon:4.0}, baltic:{lat:58.5,lon:19.0}, adriatic:{lat:43.2,lon:15.3}, blacksea:{lat:43.6,lon:34.5}, eastmed:{lat:34.2,lon:28.0} };
+const DECORATIVE_SEAS = [
+ {name:'대서양', lat:50, lon:-7.5, rx:65, ry:220},
+ {name:'지중해', lat:38, lon:12,  rx:210, ry:55},
+ {name:'카스피해', lat:41.5, lon:50.5, rx:45, ry:100},
+];
+
+let mapZoom = 1;
+let selectedProvince = null;
+function setMapZoom(d){ mapZoom = clamp(Math.round((mapZoom+d)*100)/100,0.5,2.5); renderContent(); }
+function selectProvince(fid,idx){ selectedProvince = {fid,idx}; renderContent(); }
+
+function mountainSvg(range){
+  const pxPts = range.pts.map(([lat,lon])=>projectGeo(lat,lon));
+  let s = `<polyline points="${pxPts.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="#5a5348" stroke-width="4" opacity="0.3"/>`;
+  pxPts.forEach(pt=>{ s += `<polygon class="mountain-tri" points="${(pt.x-6).toFixed(1)},${(pt.y+6).toFixed(1)} ${pt.x.toFixed(1)},${(pt.y-7).toFixed(1)} ${(pt.x+6).toFixed(1)},${(pt.y+6).toFixed(1)}"/>`; });
+  return s;
+}
+function riverSvg(river){
+  const pxPts = river.pts.map(([lat,lon])=>projectGeo(lat,lon));
+  return `<polyline points="${pxPts.map(p=>p.x+','+p.y).join(' ')}" class="river-path"><title>${river.name}</title></polyline>`;
+}
+function nationBlobSvg(nid){
+  const t = NATION_TERRITORY[nid]; if(!t) return '';
+  const c = projectGeo(t.lat,t.lon);
+  const n = NATIONS[nid];
+  const color = BLOC_COLOR[n.bloc||'none'];
+  const mine = nid===state.playerNation;
+  return `<ellipse cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" rx="${t.rx}" ry="${t.ry}" fill="${color}" class="nation-blob ${mine?'mine':''}"><title>${n.name}</title></ellipse>
+    <text x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" text-anchor="middle" class="geo-label big">${n.name}${mine?' ★':''}</text>`;
+}
+function decorativeSeaSvg(s){
+  const c = projectGeo(s.lat,s.lon);
+  return `<ellipse cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" rx="${s.rx}" ry="${s.ry}" class="sea-patch"/><text x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" text-anchor="middle" class="geo-label">${s.name}</text>`;
+}
+
+function targetOptionsHtml(fid, side, spd, currentIdx){
+  const opts = reachableIndices(fid, side, spd);
+  const frontier = side===1?currentFrontierIdx(fid):lastFrontierIdxFromEnd(fid);
+  if(!opts.length) return `<option value="${currentIdx}">공략 가능한 지점 없음</option>`;
+  return opts.map(idx=>{
+    const hp = state.cityHP[fid][idx];
+    const flank = idx!==frontier ? ' (우회 공격)' : '';
+    const fort = (FORTRESSES[fid]||[]).includes(idx) ? ' ⛨' : '';
+    return `<option value="${idx}" ${idx===currentIdx?'selected':''}>${FRONTS[fid].chain[idx]}${fort}${flank} — 체력 ${Math.round(hp.cur)}/${hp.max}</option>`;
+  }).join('');
+}
+function formCorpsFromChecks(fid){
+  const boxes = document.querySelectorAll('.corpsCheck_'+fid);
+  const ids = Array.from(boxes).filter(b=>b.checked).map(b=>parseInt(b.value));
+  formCorps(fid, ids);
+}
+function viewMap(){
+  const p = state.playerNation;
+  // layer 1: landmass base
+  let svgLand = `<rect x="0" y="0" width="${GEO_BOUNDS.w}" height="${GEO_BOUNDS.h}" class="land-mass"/>`;
+  // layer 2: decorative + game sea zones (backdrop water)
+  let svgSea = DECORATIVE_SEAS.map(decorativeSeaSvg).join('');
+  Object.keys(SEA_GEO).forEach(zid=>{
+    const c = projectGeo(SEA_GEO[zid].lat, SEA_GEO[zid].lon);
+    svgSea += `<ellipse cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" rx="70" ry="55" class="sea-patch"/>`;
+  });
+  // layer 3: national territory blobs
+  let svgNations = Object.keys(NATIONS).map(nationBlobSvg).join('');
+  // layer 4: terrain features (mountains, rivers)
+  let svgTerrainFeatures = MOUNTAIN_RANGES.map(mountainSvg).join('') + RIVERS.map(riverSvg).join('');
+  // layer 5: front chains (the actual game data) + hex province markers
+  let svgNodes='', svgLines='';
+  Object.keys(FRONTS).forEach(fid=>{
+    const f = FRONTS[fid];
+    const pts = chainCoords(fid);
+    svgLines += `<polyline points="${pts.map(pt=>pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ')}" class="frontline-path"/>`;
+    pts.forEach((pt,idx)=>{
+      const bloc = provinceOwnerBloc(fid,idx);
+      const color = BLOC_COLOR[bloc]||'#5c5648';
+      const label = f.chain[idx];
+      const isAnchor = idx===0||idx===pts.length-1;
+      const isFortress = (FORTRESSES[fid]||[]).includes(idx);
+      const r = isAnchor?13:(isFortress?11:9);
+      const sel = selectedProvince && selectedProvince.fid===fid && selectedProvince.idx===idx;
+      const hpNode = state.cityHP[fid][idx];
+      const hpPct = clamp(hpNode.cur/hpNode.max,0,1);
+      const isFrontierNode = idx===currentFrontierIdx(fid) || idx===lastFrontierIdxFromEnd(fid);
+      const barW = r*2.2;
+      svgNodes += `<g onclick="selectProvince('${fid}',${idx})">
+        ${isFortress?`<rect x="${(pt.x-r-3).toFixed(1)}" y="${(pt.y-r-3).toFixed(1)}" width="${(r*2+6).toFixed(1)}" height="${(r*2+6).toFixed(1)}" fill="none" stroke="#dfc06a" stroke-width="1.5" stroke-dasharray="2 2"/>`:''}
+        ${isAnchor?`<circle class="prov-pin-halo" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${(r+4).toFixed(1)}" fill="none"/>`:''}
+        ${isFrontierNode?`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${(r+6).toFixed(1)}" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="3 2"><title>현재 교전 접점</title></circle>`:''}
+        <circle class="prov-pin" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${r}" fill="${color}" ${sel?'stroke="#fff" stroke-width="2.5"':''}><title>${label}${isFortress?' [요새]':''} — ${bloc==='CP'?'동맹국':(bloc==='EN'?'협상국':'미상')} 통제 · 체력 ${Math.round(hpNode.cur)}/${hpNode.max}</title></circle>
+        <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${(r*0.36).toFixed(1)}" fill="#1a1710" opacity="0.55" style="pointer-events:none;"/>
+        <rect class="city-hp-wrap" x="${(pt.x-barW/2).toFixed(1)}" y="${(pt.y+r+2).toFixed(1)}" width="${barW.toFixed(1)}" height="3" rx="1"/>
+        <rect class="city-hp-fill" x="${(pt.x-barW/2).toFixed(1)}" y="${(pt.y+r+2).toFixed(1)}" width="${(barW*hpPct).toFixed(1)}" height="3" rx="1" fill="${hpPct>0.5?'#7fae5e':(hpPct>0.2?'#c9a227':'#a34a3a')}"/>
+        ${isAnchor||isFortress?`<text x="${pt.x.toFixed(1)}" y="${(pt.y-r-6).toFixed(1)}" text-anchor="middle" class="prov-label">${isFortress?'⛨ ':''}${label}</text>`:''}
+      </g>`;
+    });
+  });
+  // layer 6: interactive game sea-zone control indicators (drawn above terrain, below front chain markers)
+  let svgSeaControl='';
+  Object.keys(SEA_ZONES).forEach(zid=>{
+    const g = SEA_GEO[zid]; if(!g) return;
+    const c = projectGeo(g.lat,g.lon);
+    const ctrl = state.navalControl[zid];
+    const ctrlIsNation = ctrl && NATIONS[ctrl];
+    const color = ctrlIsNation ? BLOC_COLOR[state.blocOf[ctrl]] : 'var(--sea)';
+    const ctrlLabel = ctrlIsNation ? (' — '+nm(ctrl)+' 우세') : (ctrl==='contested' ? ' — 경합 중' : '');
+    svgSeaControl += `<ellipse cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" rx="42" ry="24" fill="${color}" opacity="0.55" stroke="#dfe8ee" stroke-width="1"><title>${SEA_ZONES[zid].name}${ctrlLabel}</title></ellipse>
+      <text x="${c.x.toFixed(1)}" y="${(c.y+3).toFixed(1)}" text-anchor="middle" class="prov-label">🌊 ${SEA_ZONES[zid].name}</text>`;
+  });
+  const svg = `<div id="mapControls">
+      <button onclick="setMapZoom(0.25)">🔍+ 확대</button>
+      <button onclick="setMapZoom(-0.25)">🔍- 축소</button>
+      <span style="align-self:center;color:var(--muted);font-size:0.8em;">배율 ${Math.round(mapZoom*100)}% · 실제 위치를 기준으로 그린 지도입니다 · 지역을 클릭하면 상세 정보가 표시됩니다</span>
+    </div>
+    <div id="mapSvgWrap"><svg viewBox="0 0 ${GEO_BOUNDS.w} ${GEO_BOUNDS.h}" style="width:${(100*mapZoom).toFixed(0)}%;height:auto;display:block;">${svgLand}${svgSea}${svgNations}${svgTerrainFeatures}${svgSeaControl}${svgLines}${svgNodes}</svg></div>
+    <div class="legend">
+      <span><i style="background:${BLOC_COLOR.CP}"></i>동맹국(CP) 통제</span>
+      <span><i style="background:${BLOC_COLOR.EN}"></i>협상국(EN) 통제</span>
+      <span><i style="background:${BLOC_COLOR.none}"></i>비전쟁/미상</span>
+      <span style="color:var(--muted)">▲ 산악 · 청색 선 하천 · 점선 전선 · ⛨ 요새(방어측 유리) · 붉은 점선 원 = 현재 교전 접점 · 도시 아래 막대 = 도시 체력</span>
+    </div>`;
+
+  let infoHtml = '';
+  if(selectedProvince){
+    const f = FRONTS[selectedProvince.fid];
+    const label = f.chain[selectedProvince.idx];
+    const bloc = provinceOwnerBloc(selectedProvince.fid,selectedProvince.idx);
+    const isFortress = (FORTRESSES[selectedProvince.fid]||[]).includes(selectedProvince.idx);
+    const hpNode = state.cityHP[selectedProvince.fid][selectedProvince.idx];
+    infoHtml = `<div class="panel"><h2>선택된 지역: ${label}${isFortress?' ⛨':''}</h2>
+      <p style="font-size:0.85em;color:var(--muted);">소속 전선: ${f.name} (${THEATRE_TERRAIN[selectedProvince.fid]} 지형)<br>
+      현재 통제: ${bloc==='CP'?'동맹국(CP)':(bloc==='EN'?'협상국(EN)':'미상')}<br>
+      도시 체력: ${Math.round(hpNode.cur)} / ${hpNode.max}<br>
+      전선 내 위치: ${selectedProvince.idx+1} / ${f.chain.length}${isFortress?'<br><span style="color:var(--accent)">⛨ 요새 지역 — 체력이 높고 공략에 더 큰 화력이 필요합니다.</span>':''}</p></div>`;
+  }
+
+  const relevantFronts = Object.keys(FRONTS).filter(fid=>frontInvolvesNation(fid,p));
+  const myDivs = state.divisions.filter(d=>d.nation===p);
+  let deployHtml = relevantFronts.map(fid=>{
+    const f = FRONTS[fid];
+    const active = isFrontActive(fid);
+    const deployed = myDivs.filter(d=>d.frontId===fid);
+    const available = myDivs.filter(d=>d.frontId!==fid);
+    const powA = estimateSidePower(f.side1,fid), powB = estimateSidePower(f.side2,fid);
+    const reservePower = active ? Math.round(state.baseline[p]/countActiveFrontsForNation(p)) : null;
+    const baseShare = state.baseline[p]/countActiveFrontsForNation(p);
+    const divBonus = playerDivBonus(p,fid);
+    const totalMine = baseShare+divBonus+0.001;
+    const contribPct = clamp(Math.round(divBonus/totalMine*100),0,100);
+    const contribHtml = active ? `<div class="front-contrib">내 사단의 전선 기여도: <b>${Math.round(divBonus)}</b> / 아군 총 전력 <b>${Math.round(totalMine)}</b> (${contribPct}%)
+      <div class="bar-wrap"><div style="width:${contribPct}%;background:var(--accent2);"></div><div style="width:${100-contribPct}%;background:var(--panel3);"></div></div></div>` : '';
+    const onSide1 = f.side1.includes(p);
+    const soloDivs = deployed.filter(d=>!d.corpsId);
+    const soloHtml = soloDivs.map(d=>{
+      const g = GENERALS.find(x=>x.id===d.generalId);
+      const usedUp = d.offensiveTurn===state.turn;
+      if(d.targetIdx==null) d.targetIdx = defaultTargetIdx(fid,p);
+      const targetSel = `<select class="node-select" onchange="setDivisionTarget(${d.id}, parseInt(this.value))">${targetOptionsHtml(fid, onSide1?1:2, g.spd, d.targetIdx)}</select>`;
+      return `<div class="battalion-chip" style="display:block;">${g.name} (${d.strength}%, 기동력${g.spd}) <button onclick="withdrawDivision(${d.id})">✕</button>
+        ${targetSel}
+        <button class="offensive-btn" onclick="attemptOffensive(${d.id})" ${(!active||usedUp)?'disabled':''} title="공세 명령: 선택한 도시를 공격합니다">${usedUp?'공세 완료':'공세 명령'}</button>
+        <label style="font-size:0.72em;margin-left:6px;color:var(--muted)"><input type="checkbox" class="corpsCheck_${fid}" value="${d.id}"> 군단에 편입</label>
+      </div>`;
+    }).join('') || '<span style="color:var(--muted);font-size:0.78em">배치된 단독 사단 없음</span>';
+    const corpsOnFront = state.corps.filter(c=>c.nation===p && c.frontId===fid);
+    const corpsHtml = corpsOnFront.map(c=>{
+      const members = state.divisions.filter(d=>c.divisionIds.includes(d.id));
+      const maxSpd = Math.max(5, ...members.map(d=>{ const g=GENERALS.find(x=>x.id===d.generalId); return g?g.spd:5; }));
+      const usedUp = members.some(d=>d.offensiveTurn===state.turn);
+      const targetSel = `<select class="node-select" onchange="setCorpsTarget(${c.id}, parseInt(this.value))">${targetOptionsHtml(fid, onSide1?1:2, maxSpd, c.targetIdx)}</select>`;
+      const memberChips = members.map(d=>{ const g=GENERALS.find(x=>x.id===d.generalId); return `<span class="battalion-chip">${g.name} (${d.strength}%)</span>`; }).join('');
+      return `<div class="corps-card"><b>🎖 ${c.name}</b> <span style="font-size:0.75em;color:var(--muted)">${members.length}개 사단 협동</span> <button class="mini-btn" onclick="disbandCorps(${c.id})">해체</button><br>
+        ${memberChips}<br>${targetSel}
+        <button class="offensive-btn" onclick="attemptCorpsOffensive(${c.id})" ${(!active||usedUp)?'disabled':''} title="군단 공세: 소속 사단 전원이 한 지점에 협동 공격합니다">${usedUp?'공세 완료':'군단 공세'}</button>
+      </div>`;
+    }).join('');
+    const formRow = soloDivs.length>=2 ? `<div style="margin-top:6px;"><button class="mini-btn" onclick="formCorpsFromChecks('${fid}')">🎖 체크한 사단으로 군단 편성 (2~4개)</button></div>` : '';
+    const options = available.map(d=>{
+      const g = GENERALS.find(x=>x.id===d.generalId);
+      return `<option value="${d.id}">${g.name} (전투력 ${d.strength}%)</option>`;
+    }).join('');
+    return `<div class="front-card">
+      <h4>${f.name} ${active?'<span class="badge" style="background:var(--danger)">교전중</span>':'<span class="badge" style="background:#444">비활성</span>'}
+        <span style="font-size:0.7em;color:var(--muted)">예상 전력 ${Math.round(powA)} : ${Math.round(powB)}</span></h4>
+      ${corpsHtml}
+      <div>${soloHtml}</div>
+      ${formRow}
+      ${contribHtml}
+      ${reservePower!==null && frontInvolvesNation(fid,p) ? `<div style="font-size:0.74em;color:var(--muted);margin-top:4px;">🪖 예비군(AI 자동 배치): 전력 약 ${reservePower}</div>` : ''}
+      ${available.length>0 ? `<div class="deploy-row">
+        <select id="sel_${fid}">${options}</select>
+        <button onclick="deployDivision('${fid}')">배치</button>
+      </div>` : ''}
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:0.85em">관여하는 전선이 아직 없습니다.</p>';
+
+  return `<div class="panel"><h2>전선 지도</h2>${svg}</div>${infoHtml}<div class="panel"><h2>전선 배치 — 최대 4-5개 군단을 한 전선에 동시에 투입해 서로 다른 지점을 노릴 수 있습니다</h2>${deployHtml}</div>`;
+}
+function defaultTargetIdx(fid, nation){
+  const onSide1 = FRONTS[fid].side1.includes(nation);
+  return onSide1 ? currentFrontierIdx(fid) : lastFrontierIdxFromEnd(fid);
+}
+function deployDivision(fid){
+  const sel = document.getElementById('sel_'+fid);
+  if(!sel || !sel.value) return;
+  const d = state.divisions.find(x=>x.id==sel.value);
+  if(d){ d.frontId = fid; d.targetIdx = defaultTargetIdx(fid, d.nation); }
+  renderAll();
+}
+function withdrawDivision(id){
+  const d = state.divisions.find(x=>x.id===id);
+  if(d){ d.frontId = null; d.targetIdx = null; removeDivisionFromItsCorps(d); }
+  renderAll();
+}
+function fortressDampen(fid, splitIdx){
+  const forts = FORTRESSES[fid]; if(!forts) return 1;
+  for(const idx of forts){ if(Math.abs(splitIdx-idx)<=1) return 0.6; }
+  return 1;
+}
+// player-facing: change which city a deployed solo division or a corps is aiming at. Bounded by the
+// acting general(s)' mobility (spd) beyond the current frontier — this is what lets a fast, high-mobility
+// unit flank deep into enemy territory instead of only ever grinding at the adjacent tile.
+function setDivisionTarget(divId, idx){
+  const p = state.playerNation;
+  const d = state.divisions.find(x=>x.id===divId && x.nation===p);
+  if(!d || !d.frontId || d.corpsId) return;
+  const g = GENERALS.find(x=>x.id===d.generalId);
+  const onSide1 = FRONTS[d.frontId].side1.includes(p);
+  const options = reachableIndices(d.frontId, onSide1?1:2, g.spd);
+  if(options.includes(idx)) d.targetIdx = idx;
+  renderAll();
+}
+function setCorpsTarget(corpsId, idx){
+  const p = state.playerNation;
+  const c = state.corps.find(x=>x.id===corpsId && x.nation===p);
+  if(!c) return;
+  const members = state.divisions.filter(d=>c.divisionIds.includes(d.id));
+  const maxSpd = Math.max(5, ...members.map(d=>{ const g=GENERALS.find(x=>x.id===d.generalId); return g?g.spd:5; }));
+  const onSide1 = FRONTS[c.frontId].side1.includes(p);
+  const options = reachableIndices(c.frontId, onSide1?1:2, maxSpd);
+  if(options.includes(idx)) c.targetIdx = idx;
+  renderAll();
+}
+// group 2-4 same-front, not-yet-grouped player divisions into a corps (군단): from then on they strike
+// together, concentrated on one shared target city — enabling 4-5 corps on one front to fight at several
+// points simultaneously, each with its own maneuver.
+function formCorps(fid, divisionIds){
+  const p = state.playerNation;
+  const divs = divisionIds.map(id=>state.divisions.find(d=>d.id===id && d.nation===p && d.frontId===fid && !d.corpsId)).filter(Boolean);
+  if(divs.length<2){ toast('군단은 같은 전선에 배치된, 아직 군단에 속하지 않은 사단 2개 이상으로 편성할 수 있습니다.'); return; }
+  if(divs.length>4){ toast('군단은 최대 4개 사단까지 편성할 수 있습니다.'); return; }
+  const cid = state.corpsIdSeq++;
+  const name = `제${cid}군단`;
+  state.corps.push({id:cid, nation:p, name, frontId:fid, divisionIds:divs.map(d=>d.id), targetIdx:defaultTargetIdx(fid,p)});
+  divs.forEach(d=>{ d.corpsId=cid; });
+  addLog(`🎖 ${name}이(가) ${FRONTS[fid].name}에 편성되었습니다 (${divs.map(d=>GENERALS.find(g=>g.id===d.generalId).name).join(', ')}).`,'info');
+  toast(`${name} 편성 완료`);
+  renderAll();
+}
+function disbandCorps(corpsId){
+  const c = state.corps.find(x=>x.id===corpsId && x.nation===state.playerNation);
+  if(!c) return;
+  c.divisionIds.forEach(did=>{ const d=state.divisions.find(x=>x.id===did); if(d) d.corpsId=null; });
+  state.corps = state.corps.filter(x=>x.id!==corpsId);
+  toast(`${c.name} 해체`);
+  renderAll();
+}
+// shared attack resolution used by both solo-division offensives and corps offensives: pools every
+// member division's attack power onto ONE target city; if the target isn't the current frontier tile,
+// this is a flanking deep-strike (softer target, mobility-gated, and the payoff for concentrating a corps).
+function resolveGroupAttack(p, fid, targetIdx, divs, label){
+  const f = FRONTS[fid];
+  const onSide1 = f.side1.includes(p);
+  const attackerSide = onSide1?1:2;
+  const frontier = onSide1?currentFrontierIdx(fid):lastFrontierIdxFromEnd(fid);
+  const isFlank = targetIdx!==frontier;
+  const isFort = (FORTRESSES[fid]||[]).includes(targetIdx);
+  let atk = 0;
+  divs.forEach(d=>{
+    const g = GENERALS.find(x=>x.id===d.generalId);
+    let a = genAtk(g)*3;
+    d.battalions.forEach(bid=>{
+      const bt = BATTALION_TYPES[bid];
+      let bAtk = bt.atk;
+      if(isFlank && bt.flankAtkMul) bAtk *= bt.flankAtkMul;
+      if(isFort && bt.fortAtkMul) bAtk *= bt.fortAtkMul;
+      a += bAtk;
+    });
+    if(d.battalions.includes('signal_corps')) a*=1.05;
+    if(state.research.done.has('combinedArms') && coreCount(d)>0 && auxCount(d)>0) a*=1.08;
+    a = applyTrait(g,fid,a,'atk',d);
+    a *= (d.strength/100);
+    atk += a;
+  });
+  // concentration synergy: pooling several divisions (a corps) hits harder than the sum of their parts
+  if(divs.length>=2) atk *= (1+0.12*(divs.length-1));
+  const result = attemptNodeAttack(fid, targetIdx, atk, attackerSide, isFlank);
+  if(result.already){ toast('이미 아군이 통제하는 지역입니다.'); return; }
+  const ratio = result.ratio;
+  const riskFactor = clamp(1/Math.max(0.1,ratio), 0.3, 2.5);
+  const decisive = result.captured && divs.length>=2;
+  let baselineHit = 0;
+  if(decisive){
+    const enemySide = onSide1?f.side2:f.side1;
+    const targetEnemy = enemySide.slice().sort((a,b)=>state.baseline[b]-state.baseline[a])[0];
+    if(targetEnemy){ baselineHit = clamp(state.baseline[targetEnemy]-15, 0, 8+Math.random()*8); state.baseline[targetEnemy] = Math.max(15, state.baseline[targetEnemy]-baselineHit); }
+  }
+  divs.forEach(d=>{
+    const loss = Math.round((5+Math.random()*9)*riskFactor*(result.captured?0.6:1));
+    d.strength = Math.max(0, d.strength-loss);
+    d.offensiveTurn = state.turn;
+  });
+  const cityName = f.chain[targetIdx];
+  if(result.captured){
+    addLog(decisive
+      ? `🌟 ${label}이(가) ${divs.length}개 사단의 협공으로 ${cityName}${isFlank?' (우회 공격!)':''}을(를) 함락했습니다! 탄넨베르크식 결정적 승리 — ${f.name} (적 전력 -${Math.round(baselineHit)}).`
+      : `⚔ ${label}이(가) ${cityName}${isFlank?' (우회 공격)':''}을(를) 함락했습니다 — ${f.name}.`, 'battle');
+  } else {
+    addLog(`⚔ ${label}이(가) ${cityName}${isFlank?' (우회 공격)':''}을(를) 공격했습니다 (남은 체력 ${result.hpLeft}/${result.hpMax}) — ${f.name}.`,'battle');
+  }
+  const dead = divs.filter(d=>d.strength<=0);
+  dead.forEach(d=>{ addLog(`💀 ${GENERALS.find(g=>g.id===d.generalId).name} 사단이 공세 중 궤멸했습니다.`,'battle'); removeDivisionFromItsCorps(d); });
+  if(dead.length) state.divisions = state.divisions.filter(d=>d.strength>0);
+  state.battleReports.unshift({turn:state.turn, date:dateStr(state.turn), fid, frontName:f.name, type:result.captured?'decisive':'offensive', general:label, magnitude:result.dmg, loss:Math.round((5+9/2)*riskFactor), coordCount:divs.length-1, baselineHit:Math.round(baselineHit), city:cityName});
+  if(state.battleReports.length>60) state.battleReports.length = 60;
+  toast(result.captured? `${cityName} 함락!` : `공세 결과: ${cityName} 체력 ${result.hpLeft}/${result.hpMax}`);
+  renderAll();
+}
+function attemptOffensive(divId){
+  const p = state.playerNation;
+  const d = state.divisions.find(x=>x.id===divId && x.nation===p);
+  if(!d || !d.frontId){ toast('전선에 배치된 사단만 공세를 명령할 수 있습니다.'); return; }
+  if(d.corpsId){ toast('이 사단은 군단에 소속되어 있습니다 — 군단 단위로 공세를 명령하세요.'); return; }
+  if(d.offensiveTurn===state.turn){ toast('이번 턴에는 이미 공세를 명령했습니다.'); return; }
+  if(d.strength<25){ toast('사단 전투력이 너무 낮아 공세를 명령할 수 없습니다.'); return; }
+  const fid = d.frontId;
+  if(!isFrontActive(fid)){ toast('교전 중인 전선에서만 공세가 가능합니다.'); return; }
+  if(d.targetIdx==null) d.targetIdx = defaultTargetIdx(fid, p);
+  const g = GENERALS.find(x=>x.id===d.generalId);
+  resolveGroupAttack(p, fid, d.targetIdx, [d], `${g.name} 사단`);
+}
+function attemptCorpsOffensive(corpsId){
+  const p = state.playerNation;
+  const c = state.corps.find(x=>x.id===corpsId && x.nation===p);
+  if(!c) return;
+  const divs = state.divisions.filter(d=>c.divisionIds.includes(d.id));
+  if(divs.length<2){ toast('군단에 사단이 부족합니다.'); return; }
+  if(divs.some(d=>d.offensiveTurn===state.turn)){ toast('이번 턴에는 이미 공세를 명령했습니다.'); return; }
+  const usable = divs.filter(d=>d.strength>=15);
+  if(usable.length<2){ toast('군단 전투력이 너무 낮아 공세를 명령할 수 없습니다.'); return; }
+  if(!isFrontActive(c.frontId)){ toast('교전 중인 전선에서만 공세가 가능합니다.'); return; }
+  resolveGroupAttack(p, c.frontId, c.targetIdx, usable, `${c.name} (${usable.length}개 사단)`);
+}
+
+function countActiveFrontsForNation(n){ return Math.max(1,activeFrontsForNation(n).length); }
+// officer training ("연수"): permanent per-general stat boosts bought with knowledge+manpower
+function genAtk(g){ const b=state.genBoost&&state.genBoost[g.id]; return g.atk + (b?b.atk:0); }
+function genDef(g){ const b=state.genBoost&&state.genBoost[g.id]; return g.def + (b?b.def:0); }
+function trainGeneral(gid){
+  const p = state.playerNation;
+  const g = GENERALS.find(x=>x.id===gid && x.nation===p);
+  if(!g || state.turn<g.unlock) return;
+  const b = state.genBoost[gid] || (state.genBoost[gid]={atk:0,def:0,times:0});
+  if(b.times>=5){ toast('이 장군은 더 이상 연수할 수 없습니다 (최대 5회).'); return; }
+  const kCost = 30+b.times*20, mpCost = 40+b.times*20;
+  if(state.knowledge<kCost || state.manpower[p]<mpCost){ toast(`연수에 지식 ${kCost}, 병력 ${mpCost}이 필요합니다.`); return; }
+  state.knowledge -= kCost; state.manpower[p] -= mpCost;
+  b.atk += 1; b.def += 1; b.times += 1;
+  addLog(`🎓 ${g.name} 장군이 참모 연수를 마쳐 능력이 향상되었습니다 (공+1/방+1, 누적 ${b.times}회).`,'info');
+  toast(`${g.name} 연수 완료`);
+  renderAll();
+}
+function playerDivBonus(n,fid){
+  if(n!==state.playerNation) return 0;
+  const divs = state.divisions.filter(d=>d.nation===n && d.frontId===fid);
+  const raw = divs.map(d=>{
+    const g = GENERALS.find(x=>x.id===d.generalId);
+    let atk = genAtk(g)*3, def = genDef(g)*3;
+    d.battalions.forEach(bid=>{ atk+=BATTALION_TYPES[bid].atk; def+=BATTALION_TYPES[bid].def; });
+    // signal corps: small flat division-wide coordination bonus
+    if(d.battalions.includes('signal_corps')){ atk*=1.05; def*=1.05; }
+    if(state.research.done.has('creepingBarrage') && d.battalions.some(b=>b==='art_field'||b==='art_heavy'||b==='art_mountain')) atk*=1.08;
+    if(state.research.done.has('defenseInDepth') && d.battalions.length>=3) def*=1.08;
+    if(state.research.done.has('combinedArms') && coreCount(d)>0 && auxCount(d)>0){ atk*=1.08; def*=1.08; }
+    atk = applyTrait(g,fid,atk,'atk',d);
+    def = applyTrait(g,fid,def,'def',d);
+    return { d, g, val:(atk+def)/2 * (d.strength/100) };
+  });
+  // rivalry: samsonov + rennenkampf on same front both penalized
+  const genIds = raw.map(r=>r.g.id);
+  if(genIds.includes('samsonov') && genIds.includes('rennenkampf')){
+    raw.forEach(r=>{ if(r.g.id==='samsonov'||r.g.id==='rennenkampf') r.val *= 0.8; });
+  }
+  let bonus = raw.reduce((s,r)=>s+r.val,0);
+  const railLv = state.industry[n] ? state.industry[n].rail : 1;
+  const railRate = state.research.done.has('railMobility') ? 0.09 : 0.06;
+  bonus *= (1+railRate*railLv);
+  if(state.research.done.has('staffCollege')) bonus *= 1.1;
+  return bonus;
+}
+function applyTrait(g,fid,val,kind,div){
+  switch(g.trait){
+    case 'east_def': if(fid==='eastern'&&kind==='def') return val*1.25; break;
+    case 'blitz': if(state.frontFirstBattle[fid]&&kind==='atk') return val*1.2; break;
+    case 'isonzo': if(fid==='italian'&&kind==='def') return val*1.25; break;
+    case 'anatolia': if((fid==='caucasus'||fid==='mesopotamia')&&kind==='def') return val*1.3; break;
+    case 'outrance': if(kind==='atk') return val*1.15; break;
+    case 'fortress': if(kind==='def') return val*1.25; break;
+    case 'reckless': if(kind==='atk') return val*1.2; break;
+    case 'cavalry': if(kind==='atk' && div && div.battalions.includes('cav_light')) return val*1.3; break;
+    case 'surprise': if(state.frontFirstBattle[fid]&&kind==='atk') return val*1.25; break;
+    case 'frontal': if(kind==='atk') return val*1.2; if(kind==='def') return val*0.85; break;
+    case 'homeland': if(fid==='balkan'&&kind==='def') return val*1.3; break;
+    case 'genius': return val*1.15;
+    case 'guerrilla': if(kind==='atk') return val*1.1; if(kind==='def') return val*1.35; break;
+    case 'siege_weak': if(kind==='def') return val*0.7; break;
+    case 'caucasus_atk': if(fid==='caucasus'&&kind==='atk') return val*1.25; break;
+    case 'cautious': if(kind==='atk') return val*0.9; if(kind==='def') return val*1.15; break;
+    case 'armor': if(kind==='atk' && div && div.battalions.includes('tank_mark')) return val*1.35; break;
+    case 'cossack': if(kind==='atk' && div && div.battalions.includes('cossack_cav')) return val*1.3; break;
+    case 'desperate': if(kind==='atk' && div && div.strength<=50) return val*1.35; break;
+    case 'engineer_synergy': if(kind==='def' && div && div.battalions.includes('engineer')) return val*1.2; break;
+    case 'artillery_synergy': if(kind==='atk' && div && div.battalions.filter(b=>b==='art_field'||b==='art_heavy'||b==='art_mountain').length>=2) return val*1.2; break;
+    case 'mg_synergy': if(kind==='def' && div && div.battalions.includes('mg')) return val*1.25; break;
+    case 'balkan_occupier': if(fid==='balkan'&&kind==='atk') return val*1.2; break;
+    case 'coalition_bonus': { const f=FRONTS[fid]; const side=f.side1.includes(g.nation)?f.side1:f.side2; if(side.length>=2 && kind==='atk') return val*1.1; break; }
+    case 'unprepared': if(kind==='atk') return val*0.85; break;
+  }
+  return val;
+}
+function powerContribution(n,fid){
+  if(!nationAtWarInFront(n,fid)) return 0;
+  return state.baseline[n]/countActiveFrontsForNation(n) + playerDivBonus(n,fid);
+}
+function nationAtWarInFront(n,fid){
+  const f = FRONTS[fid];
+  const other = f.side1.includes(n)? f.side2 : f.side1;
+  return other.some(o=>isAtWar(n,o));
+}
+function estimateSidePower(sideNations,fid){
+  return sideNations.reduce((s,n)=>s+powerContribution(n,fid),0);
+}
+
+/* ======================= INDUSTRY & RESEARCH ======================= */
+function industryCost(level){ return 60 + level*50; }
+function upgradeIndustry(cid){
+  const p = state.playerNation;
+  const ind = state.industry[p];
+  const cost = industryCost(ind[cid]);
+  if(ind[cid]>=5 || state.industryPoints[p]<cost) return;
+  state.industryPoints[p]-=cost;
+  ind[cid]++;
+  toast(`${INDUSTRY_CATS[cid].name} 레벨이 ${ind[cid]}로 상승했습니다.`);
+  renderAll();
+}
+function researchProd(cid){
+  const cat = PRODUCTION_RESEARCH[cid];
+  const lv = state.research.prod[cid];
+  if(lv>=cat.maxLv) return;
+  const cost = cat.costFn(lv);
+  if(state.knowledge<cost) return;
+  state.knowledge-=cost;
+  state.research.prod[cid]++;
+  toast(`${cat.name} 레벨이 ${state.research.prod[cid]}로 상승했습니다.`);
+  renderAll();
+}
+function canResearchAbility(item){
+  if(state.research.done.has(item.id)) return false;
+  if(item.nationOnly && item.nationOnly!==state.playerNation) return false;
+  if(item.requires && item.requires.some(r=>!state.research.done.has(r))) return false;
+  return true;
+}
+function researchAbility(id){
+  const item = ABILITY_RESEARCH.find(x=>x.id===id);
+  if(!item || !canResearchAbility(item)) return;
+  const c = item.cost||{};
+  if((c.knowledge||0)>state.knowledge || (c.steel||0)>state.steel || (c.oil||0)>state.oil) return;
+  state.knowledge-=(c.knowledge||0); state.steel-=(c.steel||0); state.oil-=(c.oil||0);
+  state.research.done.add(id);
+  toast(`연구 완료: ${item.name}`);
+  addLog(`🔬 연구 완료: ${item.name} — ${item.desc}`,'divergence');
+  renderAll();
+}
+
+function viewResearch(){
+  const p = state.playerNation;
+  const ind = state.industry[p];
+  const infraCards = Object.keys(INDUSTRY_CATS).map(cid=>{
+    const cat = INDUSTRY_CATS[cid];
+    const lv = ind[cid];
+    const cost = industryCost(lv);
+    const maxed = lv>=5;
+    const dots = Array.from({length:5},(_,i)=>`<span class="${i<lv?'filled':''}"></span>`).join('');
+    return `<div class="ind-card">
+      <h4>${cat.name} — Lv.${lv}${maxed?' (최대)':''}</h4>
+      <p>${cat.desc}</p>
+      <div class="level-dots">${dots}</div>
+      <button class="mini-btn" ${maxed||state.industryPoints[p]<cost?'disabled':''} onclick="upgradeIndustry('${cid}')">업그레이드 (비용: ${cost} 산업력)</button>
+    </div>`;
+  }).join('');
+
+  const prodCards = Object.keys(PRODUCTION_RESEARCH).map(cid=>{
+    const cat = PRODUCTION_RESEARCH[cid];
+    const lv = state.research.prod[cid];
+    const cost = cat.costFn(lv);
+    const maxed = lv>=cat.maxLv;
+    const dots = Array.from({length:cat.maxLv},(_,i)=>`<span class="${i<lv?'filled':''}"></span>`).join('');
+    return `<div class="ind-card">
+      <h4>${cat.name} — Lv.${lv}${maxed?' (최대)':''}</h4>
+      <p>${cat.desc}</p>
+      <div class="level-dots">${dots}</div>
+      <button class="mini-btn" ${maxed||state.knowledge<cost?'disabled':''} onclick="researchProd('${cid}')">연구 (비용: ${cost} 지식)</button>
+    </div>`;
+  }).join('');
+
+  const abilityCards = ABILITY_RESEARCH.filter(item=>!item.nationOnly || item.nationOnly===p).map(item=>{
+    const done = state.research.done.has(item.id);
+    const lockedByReq = item.requires && item.requires.some(r=>!state.research.done.has(r));
+    const canDo = canResearchAbility(item);
+    const c = item.cost||{};
+    const affordable = (c.knowledge||0)<=state.knowledge && (c.steel||0)<=state.steel && (c.oil||0)<=state.oil;
+    const costHtml = ['knowledge','steel','oil'].filter(k=>c[k]).map(k=>{
+      const label = k==='knowledge'?'지식':(k==='steel'?'강철':'원유');
+      return `<span class="cost-tag">${label} ${c[k]}</span>`;
+    }).join('');
+    return `<div class="ability-card ${done?'done':''} ${!canDo&&!done?'locked':''}">
+      <h4>${item.name} ${done?'<span class="badge" style="background:var(--good)">완료</span>':(lockedByReq?'<span class="badge" style="background:#444">선행 연구 필요</span>':'')}</h4>
+      <p>${item.desc}</p>
+      ${!done?costHtml:''}
+      ${!done?`<button class="mini-btn" ${(!canDo||!affordable)?'disabled':''} onclick="researchAbility('${item.id}')">연구 시작</button>`:''}
+    </div>`;
+  }).join('');
+
+  return `<div class="panel"><h2>기반 시설 — 산업력 ${Math.round(state.industryPoints[p])}</h2><div class="grid3">${infraCards}</div></div>
+    <div class="panel"><h2>생산 연구 — 지식 ${Math.round(state.knowledge)} · 강철 ${Math.round(state.steel)} · 원유 ${Math.round(state.oil)}</h2><div class="grid3">${prodCards}</div></div>
+    <div class="panel"><h2>능력 연구 (특수부대·전차·함선 해금)</h2>${abilityCards}</div>`;
+}
+
+/* ======================= NAVY ======================= */
+function viewNavy(){
+  const p = state.playerNation;
+  const zoneIds = Object.keys(SEA_ZONES).filter(z=>SEA_ZONES[z].nations.includes(p));
+  const myAdmirals = ADMIRALS.filter(a=>a.nation===p).slice().sort((a,b)=>a.unlock-b.unlock);
+  const admHtml = myAdmirals.map(a=>{
+    const locked = state.turn<a.unlock;
+    const assignedShip = state.ships.find(s=>s.admiralId===a.id);
+    if(locked){ const d=turnToDate(a.unlock); return `<div class="gen-card locked"><div><b>${a.name}</b><span class="gen-lock">🔒 ${d.year}년 ${d.month}월에 등장 예정</span></div></div>`; }
+    return `<div class="gen-card ${assignedShip?'used':''}"><div><b>${a.name}</b> <span class="grade-badge grade-${a.grade}">${a.grade}급</span><span class="gen-trait">${a.desc}</span></div>
+      <div class="gen-stats"><span>공+${a.atkBonus}</span><span>방+${a.defBonus}</span>${assignedShip?`<span style="color:var(--muted)">기함 배치됨</span>`:''}</div></div>`;
+  }).join('') || `<p style="color:var(--muted);font-size:0.85em">${nm(p)} 소속 제독이 없습니다.</p>`;
+
+  if(zoneIds.length===0) return `<div class="panel"><h2>제독단</h2><div class="card-list">${admHtml}</div></div><div class="panel"><h2>해군</h2><p style="color:var(--muted)">${nm(p)}은(는) 해안에 접한 해역이 없습니다.</p></div>`;
+  const shipyardLv = state.industry[p].shipyard;
+  const buildPanel = `<div class="composer">
+    <select id="shipZone">${zoneIds.map(z=>`<option value="${z}">${SEA_ZONES[z].name}</option>`).join('')}</select>
+    <select id="shipType">${Object.keys(SHIP_TYPES).map(t=>{
+      const st = SHIP_TYPES[t];
+      const researchLocked = st.requiresResearch && !state.research.done.has(st.requiresResearch);
+      const locked = shipyardLv<st.reqShipyard || researchLocked;
+      const reason = researchLocked ? '연구 탭에서 해금 필요' : (shipyardLv<st.reqShipyard ? '조선소 Lv.'+st.reqShipyard+' 필요' : '');
+      return `<option value="${t}" ${locked?'disabled':''}>${st.name} (비용 ${st.cost}${reason?', '+reason:''})</option>`;
+    }).join('')}</select>
+    <button class="send" onclick="buildShip()">건조</button>
+  </div>`;
+  const usedAdmiralIds = new Set(state.ships.filter(s=>s.nation===p && s.admiralId).map(s=>s.admiralId));
+  const zonesHtml = zoneIds.map(zid=>{
+    const zone = SEA_ZONES[zid];
+    const myShips = state.ships.filter(s=>s.nation===p && s.zone===zid);
+    const ctrl = state.navalControl[zid];
+    const squadronIds = Array.from(new Set(myShips.map(s=>s.squadron||1))).sort((a,b)=>a-b);
+    const shipsHtml = squadronIds.map(sq=>{
+      const sqShips = myShips.filter(s=>(s.squadron||1)===sq);
+      const sqShipsHtml = sqShips.map(s=>{
+        const st = SHIP_TYPES[s.type];
+        const adm = s.admiralId ? ADMIRALS.find(a=>a.id===s.admiralId) : null;
+        const availAdm = myAdmirals.filter(a=>state.turn>=a.unlock && !usedAdmiralIds.has(a.id));
+        const admControl = adm
+          ? `<span>⭐ ${adm.name} (공+${adm.atkBonus}/방+${adm.defBonus}) <button class="mini-btn" onclick="unassignAdmiral(${s.id})">해임</button></span>`
+          : (availAdm.length>0 ? `<select id="admSel_${s.id}">${availAdm.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</select><button class="mini-btn" onclick="assignAdmiralFromSelect(${s.id})">제독 임명</button>` : '<span style="color:var(--muted);font-size:0.78em">임명 가능한 제독 없음</span>');
+        return `<div class="ship-card"><span>${st.name} (공${st.atk}/방${st.def})</span>${admControl}<button class="mini-btn" onclick="scrapShip(${s.id})">해체</button></div>`;
+      }).join('');
+      const flagship = sqShips.find(s=>s.admiralId);
+      return `<div class="squadron-hdr">${zone.name} 제${sq}함단 ${flagship?'⭐ 기함 배치됨':''}</div>${sqShipsHtml}`;
+    }).join('') || '<p style="color:var(--muted);font-size:0.8em">이 해역에 배치된 함선이 없습니다.</p>';
+    const ctrlIsNation = ctrl && NATIONS[ctrl];
+    const ctrlBadge = ctrlIsNation ? `<span class="badge" style="background:${ctrl===p?'var(--good)':'var(--danger)'}">${nm(ctrl)} 우세</span>` : (ctrl==='contested' ? '<span class="badge" style="background:#886">경합 중</span>' : '<span class="badge" style="background:#444">평시</span>');
+    return `<div class="front-card"><h4>${zone.name} ${ctrlBadge}</h4>
+      <div style="font-size:0.78em;color:var(--muted);margin-bottom:6px;">경합국: ${zone.nations.map(nm).join(', ')}</div>
+      ${shipsHtml}</div>`;
+  }).join('');
+  return `<div class="panel"><h2>제독단</h2><div class="card-list">${admHtml}</div></div>
+    <div class="panel"><h2>함선 건조 — 산업력 ${Math.round(state.industryPoints[p])} · 조선소 Lv.${shipyardLv}</h2>${buildPanel}</div>
+    <div class="panel"><h2>함대 배치</h2>${zonesHtml}</div>`;
+}
+function buildShip(){
+  const p = state.playerNation;
+  const zone = document.getElementById('shipZone').value;
+  const type = document.getElementById('shipType').value;
+  const st = SHIP_TYPES[type];
+  if(state.industry[p].shipyard < st.reqShipyard){ toast('조선소 레벨이 부족합니다.'); return; }
+  if(st.requiresResearch && !state.research.done.has(st.requiresResearch)){ toast('먼저 연구 탭에서 해금하세요.'); return; }
+  if(state.industryPoints[p] < st.cost){ toast('산업력이 부족합니다.'); return; }
+  state.industryPoints[p]-=st.cost;
+  const squadron = Math.floor(state.ships.filter(s=>s.nation===p && s.zone===zone).length/SQUADRON_SIZE)+1;
+  state.ships.push({id:state.shipSeq++, nation:p, type, zone, admiralId:null, squadron});
+  toast(`${st.name}을(를) ${SEA_ZONES[zone].name} 제${squadron}함단에 배치했습니다.`);
+  renderAll();
+}
+function scrapShip(id){
+  state.ships = state.ships.filter(s=>s.id!==id);
+  renderAll();
+}
+function assignAdmiralFromSelect(shipId){
+  const sel = document.getElementById('admSel_'+shipId);
+  if(!sel || !sel.value) return;
+  assignAdmiral(shipId, sel.value);
+}
+function assignAdmiral(shipId, admiralId){
+  const ship = state.ships.find(s=>s.id===shipId);
+  if(!ship) return;
+  ship.admiralId = admiralId || null;
+  renderAll();
+}
+function unassignAdmiral(shipId){
+  const ship = state.ships.find(s=>s.id===shipId);
+  if(ship) ship.admiralId=null;
+  renderAll();
+}
+
+/* ======================= LOG / HISTORY ======================= */
+function addLog(text,type){ state.log.push({turn:state.turn,text,type:type||'info'}); }
+function viewLog(){
+  const logHtml = state.log.slice().reverse().map(e=>`<div class="log-entry ${e.type}"><span class="log-turn">턴 ${e.turn} · ${dateStr(e.turn)}</span>${e.text}</div>`).join('');
+  const cmp = historyCompareHtml();
+  const replayHtml = (state.battleReports||[]).map(r=>{
+    if(r.type==='decisive') return `<div class="battle-replay-card decisive"><b>🌟 ${r.frontName}</b> · 턴 ${r.turn} (${r.date})<br>
+      ${r.general} 사단, ${r.coordCount+1}개 사단 협공 — 결정적 포위 섬멸 (전선 ${r.magnitude} 이동, 적 전력 -${r.baselineHit}, 아군 피해 ${r.loss}%)</div>`;
+    if(r.type==='offensive') return `<div class="battle-replay-card"><b>⚔ ${r.frontName}</b> · 턴 ${r.turn} (${r.date})<br>
+      ${r.general} 사단 공세 명령 — 전선 ${r.magnitude} 이동${r.coordCount>=1?` (협공 ${r.coordCount}개 사단 포함)`:''}, 아군 피해 ${r.loss}%</div>`;
+    return `<div class="battle-replay-card"><b>${r.frontName}</b> · 턴 ${r.turn} (${r.date})<br>
+      전력비 ${r.powA}:${r.powB} — 전선 ${Math.abs(r.shift)}만큼 ${r.shift<0?'측 우위':'반대측 우위'}로 이동</div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:0.85em">아직 기록된 전투가 없습니다.</p>';
+  return `<div class="grid2">
+    <div class="panel"><h2>역사와의 비교</h2>${cmp}</div>
+    <div class="panel"><h2>사건 기록</h2><div id="logList">${logHtml}</div></div>
+  </div>
+  <div class="panel"><h2>전투 다시보기</h2><div class="card-list">${replayHtml}</div></div>`;
+}
+function historyCompareHtml(){
+  const items = [];
+  let itaNow;
+  if(state.blocOf.ITA==='EN') itaNow='협상국으로 참전(진영 이탈)';
+  else if(nationAtWarAtAll('ITA')) itaNow='동맹국 편에서 참전';
+  else itaNow='명목상 동맹국이나 미참전';
+  items.push(histLine('이탈리아의 진영', '1915년 협상국으로 참전(동맹 이탈)', itaNow));
+  items.push(histLine('오스만 제국의 진영', '1914년 10월 동맹국(CP)으로 참전', state.blocOf.OTT?( (state.blocOf.OTT==='CP'?'동맹국':'협상국')+' 진영' ) : '아직 중립'));
+  items.push(histLine('사라예보 사건', '1914년 6월, 프란츠 페르디난트 암살 → 전쟁 도화선', state.turn>=turnFor(1914,6) ? '이미 발생함' : `아직 ${dateStr(turnFor(1914,6))}에 예정`));
+  items.push(histLine('영국의 참전', '1914년 8월 독일에 선전포고', isAtWar('UK','GER')?'독일과 전쟁 중':'독일과 아직 전쟁 상태 아님'));
+  items.push(histLine('세르비아 전선', '1915년까지 저항 후 점령', state.collapsed.SER? '세르비아 붕괴됨':'현재 전선 진행도 '+Math.round(state.frontProgress.balkan)));
+  return items.join('');
+}
+function histLine(title,ot,now){
+  return `<div class="history-compare"><b>${title}</b><br><span class="ot">실제 역사: ${ot}</span><br><span class="now">현재 타임라인: ${now}</span></div>`;
+}
+
+/* ======================= TURN ENGINE ======================= */
+function doTurnLogic(){
+  resolveBattles();
+  resolveNaval();
+  processScriptedEvents();
+  aiDiplomacyStep();
+  updateWarWeariness();
+  regenResources();
+  advanceTime();
+  state.ap = Math.min(AP_CAP, state.ap + AP_GAIN);
+}
+// domestic unrest: every nation accumulates war weariness while it's fighting (faster if it's losing
+// badly — low baseline, many active fronts). Crossing 100 triggers an anti-government uprising that
+// guts the nation's baseline strength and manpower — a generalized version of Russia's 1917 collapse
+// that can, in principle, hit any belligerent, including the player.
+function updateWarWeariness(){
+  NATION_IDS.forEach(n=>{
+    if(!isNationActive(n)) return;
+    if(nationAtWarAtAll(n)){
+      const fronts = activeFrontsForNation(n).length;
+      const lowMoraleFactor = state.baseline[n]<40 ? 1.6 : 1;
+      state.warWeariness[n] = Math.min(150, (state.warWeariness[n]||0) + (1+fronts*0.7)*lowMoraleFactor);
+    } else {
+      state.warWeariness[n] = Math.max(0, (state.warWeariness[n]||0) - 1.5);
+    }
+    if(state.warWeariness[n] >= 100){
+      state.baseline[n] = Math.max(15, state.baseline[n]*0.55);
+      state.manpower[n] = Math.max(0, state.manpower[n]*0.5);
+      addLog(`🔥 ${nm(n)}에서 반정부 세력이 폭발적으로 봉기했습니다! 누적된 전쟁 피로가 혁명적 소요로 번지며 군의 전력과 병력 보충이 급감했습니다.`,'divergence');
+      if(n===state.playerNation) toast('⚠ 국내 소요 발생! 전쟁 피로가 한계를 넘었습니다.');
+      state.warWeariness[n] = 55; // scars remain, but the immediate pressure is spent — can build up again
+    }
+  });
+}
+function endTurn(){
+  doTurnLogic();
+  renderAll();
+}
+function multiEndTurn(n){
+  const startWars = state.wars.size;
+  const wasCrisis = state.crisisActive;
+  let done = 0;
+  for(let i=0;i<n;i++){
+    doTurnLogic();
+    done++;
+    const p = state.playerNation;
+    const playerNewWar = Array.from(state.wars).some(wk=>{
+      const [x,y]=wk.split('|');
+      return (x===p||y===p);
+    }) && nationAtWarAtAll(p) && state.wars.size>startWars;
+    if((state.crisisActive && !wasCrisis) || playerNewWar || state.collapsed[p]){
+      break;
+    }
+  }
+  renderAll();
+  toast(`${done}턴을 진행했습니다.`);
+}
+
+function processScriptedEvents(){
+  SCRIPTED_EVENTS.forEach(e=>{ if(e.turn===state.turn) e.apply(); });
+}
+
+function resolveBattles(){
+  Object.keys(FRONTS).forEach(fid=>{
+    if(!isFrontActive(fid)) return;
+    const f = FRONTS[fid];
+    const powA = estimateSidePower(f.side1,fid);
+    const powB = estimateSidePower(f.side2,fid);
+    const total = powA+powB+1;
+    let shift = ((powA-powB)/total) * f.volatility * 20;
+    shift *= (0.8+Math.random()*0.4);
+    shift *= fortressDampen(fid, frontOwnerSplitIndex(fid));
+    applyFrontierPressure(fid, shift);
+    const loserIsSide1 = shift<0;
+    f.side1.forEach(n=>{ state.baseline[n] = Math.max(15,state.baseline[n]-(loserIsSide1?total*0.01:total*0.004)); });
+    f.side2.forEach(n=>{ state.baseline[n] = Math.max(15,state.baseline[n]-(!loserIsSide1?total*0.01:total*0.004)); });
+    const p = state.playerNation;
+    const playerOnSide1 = f.side1.includes(p);
+    const playerOnSide2 = f.side2.includes(p);
+    if(playerOnSide1 || playerOnSide2){
+      const oppPow = playerOnSide1?powB:powA;
+      const ownPow = playerOnSide1?powA:powB;
+      const dmg = clamp((oppPow/(ownPow+1))*9,2,28);
+      state.divisions.filter(d=>d.nation===p && d.frontId===fid).forEach(d=>{
+        const dg = GENERALS.find(x=>x.id===d.generalId);
+        let dmgMul = (dg && dg.trait==='attrition') ? 0.88 : 1;
+        d.battalions.forEach(bid=>{ const bt=BATTALION_TYPES[bid]; if(bt.defenseDmgMul) dmgMul *= bt.defenseDmgMul; });
+        d.strength = Math.max(0,Math.round(d.strength-dmg*dmgMul*(0.7+Math.random()*0.6)));
+        if(d.strength<=0){
+          const g = GENERALS.find(x=>x.id===d.generalId);
+          addLog(`💀 ${g.name} 사단이 ${f.name}에서 궤멸했습니다.`,'battle');
+          removeDivisionFromItsCorps(d);
+        }
+      });
+      state.divisions = state.divisions.filter(d=>!(d.nation===p && d.frontId===fid && d.strength<=0));
+    }
+    state.divisions.forEach(d=>{ if(d.frontId!==fid && d.strength<100){ const heal = 8+((d.nation===state.playerNation && state.research.done.has('fieldHospitals'))?4:0); d.strength=Math.min(100,d.strength+heal); } });
+    state.frontFirstBattle[fid] = false;
+    if(state.frontProgress[fid]<=-95 || state.frontProgress[fid]>=95){
+      const losingSide = state.frontProgress[fid]<=-95? f.side2 : f.side1;
+      losingSide.forEach(n=>{
+        if(!state.collapsed[n] && nationAtWarAtAll(n)){
+          state.collapsed[n]=true;
+          addLog(`🏳 ${nm(n)}이(가) ${f.name}의 붕괴로 전력을 상실, 강화 협상을 모색합니다.`,'divergence');
+        }
+      });
+    }
+    if(Math.abs(shift)>3){
+      addLog(`⚔ ${f.name}: ${f.side1.map(nm).join('/')} vs ${f.side2.map(nm).join('/')} — 전력비 ${Math.round(powA)}:${Math.round(powB)}, 전선이 ${shift<0?f.side2.map(nm).join('/'):f.side1.map(nm).join('/')} 쪽으로 이동했습니다.`,'battle');
+      state.battleReports.unshift({turn:state.turn, date:dateStr(state.turn), fid, frontName:f.name, type:'front', powA:Math.round(powA), powB:Math.round(powB), shift:Math.round(shift)});
+      if(state.battleReports.length>60) state.battleReports.length = 60;
+    }
+  });
+}
+
+function resolveNaval(){
+  Object.keys(SEA_ZONES).forEach(zid=>{
+    const zone = SEA_ZONES[zid];
+    const contesting = zone.nations.filter(n=>zone.nations.some(o=>o!==n && isAtWar(n,o)));
+    if(contesting.length<2){ state.navalControl[zid]=null; return; }
+    const power = {};
+    contesting.forEach(n=>{
+      const shipPow = state.ships.filter(s=>s.nation===n && s.zone===zid).reduce((s,sh)=>{
+        let p = SHIP_TYPES[sh.type].atk+SHIP_TYPES[sh.type].def;
+        if(sh.admiralId){
+          const adm = ADMIRALS.find(a=>a.id===sh.admiralId);
+          if(adm) p += adm.atkBonus+adm.defBonus;
+        }
+        return s+p;
+      },0);
+      power[n] = shipPow/2 + state.baseline[n]*0.05;
+      if(n===state.playerNation && state.research.done.has('navalDoctrine')) power[n]*=1.1;
+    });
+    const sorted = contesting.slice().sort((a,b)=>power[b]-power[a]);
+    const top = sorted[0], second = sorted[1];
+    if(power[top] > power[second]*1.4){
+      state.navalControl[zid]=top;
+      contesting.forEach(n=>{ if(n!==top && isAtWar(n,top)) state.baseline[n]=Math.max(15,state.baseline[n]-3); });
+    } else state.navalControl[zid]='contested';
+  });
+}
+
+function aiDiplomacyStep(){
+  // crisis deadline check
+  if(state.crisisActive && !isAtWar('AH','SER') && state.turn>=state.crisisDeadline){
+    if(getRel('AH','SER') <= -50){
+      declareWar('AH','SER');
+      addLog('💥 사라예보 위기가 결국 전쟁으로 번졌습니다: 오스트리아-헝가리가 세르비아에 선전포고했습니다.','war');
+    } else {
+      addLog('🕊 외교적 노력 덕분에 사라예보 위기가 전쟁으로 번지지 않았습니다.','peace');
+    }
+    state.crisisActive=false;
+  }
+  // alliance-obligation cascade
+  const snapshotWars = Array.from(state.wars);
+  snapshotWars.forEach(wk=>{
+    const [x,y] = wk.split('|');
+    [[x,y],[y,x]].forEach(([belligerent,opponent])=>{
+      NATION_IDS.forEach(z=>{
+        if(!isNationActive(z)) return;
+        if(z===belligerent||z===opponent) return;
+        if(isAtWar(z,opponent)) return;
+        if(state.pacts[relKey(z,opponent)] && state.pacts[relKey(z,opponent)]>state.turn) return;
+        if(state.blocOf[z] && state.blocOf[z]===state.blocOf[belligerent]){
+          let chance = 0.28 + Math.max(0,-getRel(z,opponent))/160 + Math.max(0,getRel(z,belligerent))/220;
+          if(Math.random()<chance){
+            declareWar(z,opponent);
+            addLog(`${nm(z)}, 동맹 의무에 따라 ${nm(opponent)}에 선전포고했습니다.`,'war');
+          }
+        }
+      });
+    });
+  });
+  // neutral nations decide (Ottoman, and — from 1915 — the newly-active minors)
+  NATION_IDS.forEach(n=>{
+    if(!isNationActive(n)) return;
+    if(state.blocOf[n]!==null) return;
+    const cpAvg = avgRelWithBloc(n,'CP');
+    const enAvg = avgRelWithBloc(n,'EN');
+    const diff = cpAvg-enAvg;
+    if(Math.abs(diff)>22 && Math.random()<0.12+Math.abs(diff)/280){
+      const joinBloc = diff>0?'CP':'EN';
+      state.blocOf[n]=joinBloc;
+      addLog(`⚡ 역사적 분기점: ${nm(n)}이(가) ${joinBloc==='CP'?'동맹국':'협상국'}으로 공식 참전합니다!`,'divergence');
+      NATION_IDS.forEach(o=>{ if(state.blocOf[o] && state.blocOf[o]!==joinBloc && nationAtWarAtAll(o)) declareWar(n,o); });
+    }
+  });
+  // slow relation decay / drift
+  NATION_IDS.forEach(a=>NATION_IDS.forEach(b=>{
+    if(a>=b) return;
+    if(isAtWar(a,b)) addRel(a,b,-2);
+    else if(Math.random()<0.3) addRel(a,b, Math.random()<0.5?1:-1);
+  }));
+}
+function avgRelWithBloc(n,bloc){
+  const members = NATION_IDS.filter(m=>state.blocOf[m]===bloc);
+  if(members.length===0) return 0;
+  return members.reduce((s,m)=>s+getRel(n,m),0)/members.length;
+}
+
+function regenResources(){
+  const aiMul = DIFFICULTY_MUL[state.difficulty]||1;
+  NATION_IDS.forEach(n=>{
+    const growthMul = (n===state.playerNation) ? 1 : aiMul;
+    state.baseline[n] = Math.min(400, state.baseline[n]*(1+0.01*growthMul));
+    const atWarFronts = activeFrontsForNation(n).length;
+    state.baseline[n] = Math.max(15, state.baseline[n]-atWarFronts*1.2);
+    const factoryLv = state.industry[n].factory;
+    const logisticsBonus = (n===state.playerNation) ? state.research.prod.logistics*8 : 0;
+    state.manpower[n] = Math.min(600, state.manpower[n]+ (NATIONS[n].major?90:45) + factoryLv*5 + logisticsBonus);
+    let industryGain = 8*factoryLv*(NATIONS[n].major?1.2:1);
+    if(n===state.playerNation){
+      const techLv = state.research.prod.industryTech;
+      industryGain += industryGain*0.15*techLv;
+    }
+    state.industryPoints[n] = Math.min(999, state.industryPoints[n] + industryGain);
+  });
+  const p = state.playerNation;
+  const acLv = state.research.prod.academy;
+  const swLv = state.research.prod.steelworks;
+  const ofLv = state.research.prod.oilfields;
+  state.knowledge = Math.min(999, state.knowledge + 4 + 1.5*acLv);
+  state.steel = Math.min(999, state.steel + swLv*6);
+  state.oil = Math.min(999, state.oil + ofLv*5);
+}
+function advanceTime(){
+  state.turn++;
+  const d = turnToDate(state.turn);
+  state.year = d.year; state.month = d.month;
+}
+
+/* ======================= MISC UI ======================= */
+function toast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2600);
+}
+
+/* ======================= INIT ======================= */
+renderSetup();
+</script>
+</body>
+</html>
